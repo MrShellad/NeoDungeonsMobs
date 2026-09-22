@@ -1,0 +1,15 @@
+{
+  "replace": false,
+  "values": [
+    "dungeonsmobs:armored_vindicator",
+    "dungeonsmobs:armored_pillager",
+    "dungeonsmobs:vindicator_chef",
+    "dungeonsmobs:geomancer",
+    "dungeonsmobs:redstone_golem",
+    "dungeonsmobs:redstone_monstrosity",
+    "dungeonsmobs:mountaineer",
+    "dungeonsmobs:windcaller",
+    "dungeonsmobs:royal_guard",
+    "dungeonsmobs:squall_golem"
+  ]
+}

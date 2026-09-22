@@ -1,0 +1,35 @@
+{
+  "required": true,
+  "package": "net.firefoxsalesman.dungeonsmobs.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "minVersion": "0.8.4",
+  "refmap": "mixins.dungeonsmobs.refmap.json",
+  "mixins": [
+    "AbstractArrowEntityMixin",
+    "CropsBlockMixin",
+    "MooshroomEntityMixin",
+    "CowEntityMixin",
+    "EntityAccessor",
+    "GoalSelectorAccessor",
+    "HuskAccessor",
+    "IllusionerMixin",
+    "PiglinAccessor",
+    "PiglinEntityMixin",
+    "ProjectileEntityMixin",
+    "RaidMixin",
+    "RaiderTypeAccessor",
+    "SpiderEntityMixin",
+    "TridentEntityMixin",
+    "WitherSkeletonEntityMixin",
+    "ZombifiedPiglinEntityMixin"
+  ],
+  "client": [
+    "DrownedModelMixin",
+    "PiglinModelMixin",
+    "SpiderModelMixin",
+    "TridentRendererMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

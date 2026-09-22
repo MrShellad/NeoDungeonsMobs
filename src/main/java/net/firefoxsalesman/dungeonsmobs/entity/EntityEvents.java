@@ -1,0 +1,155 @@
+package net.firefoxsalesman.dungeonsmobs.entity;
+
+import net.neoforged.fml.common.EventBusSubscriber;
+
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.ai.attributes.AttributeInstance;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.biome.MobSpawnSettings;
+import net.minecraft.world.level.dimension.BuiltinDimensionTypes;
+import net.neoforged.bus.api.ICancellableEvent;
+import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
+import net.neoforged.neoforge.event.entity.living.LivingEntityUseItemEvent;
+import net.neoforged.neoforge.event.entity.living.LivingKnockBackEvent;
+import net.neoforged.neoforge.event.entity.player.AttackEntityEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent.*;
+import net.neoforged.neoforge.event.level.BlockEvent.BlockToolModificationEvent;
+import net.neoforged.neoforge.event.level.BlockEvent.BreakEvent;
+import net.neoforged.neoforge.event.level.BlockEvent.EntityPlaceEvent;
+import net.neoforged.neoforge.event.level.LevelEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.Mod;
+
+import static net.firefoxsalesman.dungeonsmobs.DungeonsMobs.MOD_ID;
+import static net.firefoxsalesman.dungeonsmobs.mod.ModEffects.ENSNARED;
+import static net.minecraft.world.entity.EntityType.HUSK;
+
+import net.firefoxsalesman.dungeonsmobs.config.DungeonsMobsConfig;
+
+@EventBusSubscriber(modid = MOD_ID)
+public class EntityEvents {
+
+	@SubscribeEvent
+	public static void changeAttributes(EntityJoinLevelEvent event) {
+		// Tougher Husks
+		if (event.getEntity().getType().equals(HUSK)
+				&& event.getEntity() instanceof LivingEntity livingEntity
+				&& DungeonsMobsConfig.COMMON.ENABLE_STRONGER_HUSKS.get()) {
+			AttributeInstance attribute = livingEntity.getAttribute(Attributes.ARMOR);
+			if (attribute != null) {
+				attribute.setBaseValue(10.0D);
+			}
+			attribute = livingEntity.getAttribute(Attributes.MOVEMENT_SPEED);
+			if (attribute != null) {
+				attribute.setBaseValue(0.17D);
+			}
+			attribute = livingEntity.getAttribute(Attributes.KNOCKBACK_RESISTANCE);
+			if (attribute != null) {
+				attribute.setBaseValue(0.6D);
+			}
+		}
+	}
+
+	// TODO Pack and organize -- Meme Man
+	@SubscribeEvent
+	public static void preventKnockback(LivingKnockBackEvent event) {
+		LivingEntity owner = event.getEntity();
+
+		if (owner.hasEffect(ENSNARED))
+			event.setCanceled(true);
+	}
+
+	@SubscribeEvent
+	public static void preventBlockBreaking(BreakEvent event) {
+		Player owner = event.getPlayer();
+
+		if (owner.hasEffect(ENSNARED)) {
+			event.setCanceled(true);
+		}
+	}
+
+	@SubscribeEvent
+	public static void preventBlockPlacement(EntityPlaceEvent event) {
+		Entity owner = event.getEntity();
+
+		if (owner instanceof LivingEntity living) {
+			if (living.hasEffect(ENSNARED)) {
+				event.setCanceled(true);
+			}
+		}
+	}
+
+	@SubscribeEvent
+	public static void preventBlockInteraction(BlockToolModificationEvent event) {
+		Player owner = event.getPlayer();
+
+		if (owner.hasEffect(ENSNARED)) {
+			event.setCanceled(true);
+		}
+	}
+
+	@SubscribeEvent
+	public static void preventItemUseCustom(LivingEntityUseItemEvent event) {
+		LivingEntity owner = event.getEntity();
+
+		if (owner.hasEffect(ENSNARED)) {
+			if (event instanceof ICancellableEvent cancellable)
+				cancellable.setCanceled(true);
+		}
+	}
+
+	@SubscribeEvent
+	public static void preventEntityAttack(AttackEntityEvent event) {
+		Player owner = event.getEntity();
+
+		if (owner.hasEffect(ENSNARED)) {
+			event.setCanceled(true);
+		}
+	}
+
+	@SubscribeEvent
+	public static void preventItemUse(RightClickItem event) {
+		Player owner = event.getEntity();
+
+		if (owner.hasEffect(ENSNARED)) {
+			event.setCanceled(true);
+		}
+	}
+
+	@SubscribeEvent
+	public static void preventBlockInteraction(RightClickBlock event) {
+		Player owner = event.getEntity();
+
+		if (owner.hasEffect(ENSNARED)) {
+			event.setCanceled(true);
+		}
+	}
+
+	@SubscribeEvent
+	public static void preventBlockInteraction(LeftClickBlock event) {
+		Player owner = event.getEntity();
+
+		if (owner.hasEffect(ENSNARED)) {
+			event.setCanceled(true);
+		}
+	}
+
+	@SubscribeEvent
+	public static void addEndermanSpawns(LevelEvent.PotentialSpawns event) {
+		if (event.getLevel() instanceof Level level
+				&& level.dimensionTypeRegistration().is(BuiltinDimensionTypes.END)) {
+			int reduce = event.getSpawnerDataList().stream()
+					.filter(spawnerData -> spawnerData.type.equals(EntityType.ENDERMAN))
+					.map(spawnerData -> spawnerData.getWeight().asInt()).reduce(Integer::sum)
+					.orElse(100);
+			if (reduce < 100) {
+				event.addSpawnerData(new MobSpawnSettings.SpawnerData(EntityType.ENDERMAN, 100 - reduce,
+						4, 4));
+			}
+		}
+	}
+}

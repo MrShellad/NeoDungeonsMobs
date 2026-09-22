@@ -1,0 +1,629 @@
+package net.firefoxsalesman.dungeonsmobs.entity;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+
+import com.google.common.base.Supplier;
+
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import net.firefoxsalesman.dungeonsmobs.entity.illagers.ArmoredPillagerEntity;
+import net.firefoxsalesman.dungeonsmobs.entity.illagers.ArmoredVindicatorEntity;
+import net.firefoxsalesman.dungeonsmobs.entity.blaze.WildfireEntity;
+import net.firefoxsalesman.dungeonsmobs.entity.creepers.IcyCreeperEntity;
+import net.firefoxsalesman.dungeonsmobs.entity.ender.BlastlingEntity;
+import net.firefoxsalesman.dungeonsmobs.entity.ender.EyeHolderEndersentEntity;
+import net.firefoxsalesman.dungeonsmobs.entity.ender.EndersentEntity;
+import net.firefoxsalesman.dungeonsmobs.entity.ender.SnarelingEntity;
+import net.firefoxsalesman.dungeonsmobs.entity.ender.WatchlingEntity;
+import net.firefoxsalesman.dungeonsmobs.entity.golem.SquallGolemEntity;
+import net.firefoxsalesman.dungeonsmobs.entity.illagers.GeomancerEntity;
+import net.firefoxsalesman.dungeonsmobs.entity.illagers.IceologerEntity;
+import net.firefoxsalesman.dungeonsmobs.entity.illagers.MageCloneEntity;
+import net.firefoxsalesman.dungeonsmobs.entity.illagers.MageEntity;
+import net.firefoxsalesman.dungeonsmobs.entity.illagers.MountaineerEntity;
+import net.firefoxsalesman.dungeonsmobs.entity.illagers.RoyalGuardEntity;
+import net.firefoxsalesman.dungeonsmobs.entity.illagers.VindicatorChefEntity;
+import net.firefoxsalesman.dungeonsmobs.entity.illagers.WindcallerEntity;
+import net.firefoxsalesman.dungeonsmobs.entity.jungle.LeapleafEntity;
+import net.firefoxsalesman.dungeonsmobs.entity.jungle.PoisonQuillVineEntity;
+import net.firefoxsalesman.dungeonsmobs.entity.jungle.QuickGrowingVineEntity;
+import net.firefoxsalesman.dungeonsmobs.entity.jungle.WaveWhispererEntity;
+import net.firefoxsalesman.dungeonsmobs.entity.jungle.WhispererEntity;
+import net.firefoxsalesman.dungeonsmobs.entity.piglin.FungusThrowerEntity;
+import net.firefoxsalesman.dungeonsmobs.entity.piglin.ZombifiedFungusThrowerEntity;
+import net.firefoxsalesman.dungeonsmobs.entity.projectiles.BlastlingBulletEntity;
+import net.firefoxsalesman.dungeonsmobs.entity.projectiles.BlueNethershroomEntity;
+import net.firefoxsalesman.dungeonsmobs.entity.projectiles.CobwebProjectileEntity;
+import net.firefoxsalesman.dungeonsmobs.entity.projectiles.DrownedNecromancerOrbEntity;
+import net.firefoxsalesman.dungeonsmobs.entity.projectiles.MageMissileEntity;
+import net.firefoxsalesman.dungeonsmobs.entity.projectiles.MooshroomMonstrosityProjectileEntity;
+import net.firefoxsalesman.dungeonsmobs.entity.projectiles.NecromancerOrbEntity;
+import net.firefoxsalesman.dungeonsmobs.entity.projectiles.PoisonQuillEntity;
+import net.firefoxsalesman.dungeonsmobs.entity.projectiles.RedstoneMonstrosityProjectileEntity;
+import net.firefoxsalesman.dungeonsmobs.entity.projectiles.SlimeballEntity;
+import net.firefoxsalesman.dungeonsmobs.entity.projectiles.SnarelingGlobEntity;
+import net.firefoxsalesman.dungeonsmobs.entity.projectiles.WindcallerBlastProjectileEntity;
+import net.firefoxsalesman.dungeonsmobs.entity.redstone.MooshroomMonstrosityEntity;
+import net.firefoxsalesman.dungeonsmobs.entity.redstone.RedstoneCubeEntity;
+import net.firefoxsalesman.dungeonsmobs.entity.redstone.RedstoneGolemEntity;
+import net.firefoxsalesman.dungeonsmobs.entity.redstone.RedstoneMineEntity;
+import net.firefoxsalesman.dungeonsmobs.entity.redstone.RedstoneMonstrosityEntity;
+import net.firefoxsalesman.dungeonsmobs.entity.slime.ConjuredSlimeEntity;
+import net.firefoxsalesman.dungeonsmobs.entity.summonables.AreaDamageEntity;
+import net.firefoxsalesman.dungeonsmobs.entity.summonables.GeomancerBombEntity;
+import net.firefoxsalesman.dungeonsmobs.entity.summonables.GeomancerWallEntity;
+import net.firefoxsalesman.dungeonsmobs.entity.summonables.IceCloudEntity;
+import net.firefoxsalesman.dungeonsmobs.entity.summonables.KelpTrapEntity;
+import net.firefoxsalesman.dungeonsmobs.entity.summonables.SimpleTrapEntity;
+import net.firefoxsalesman.dungeonsmobs.entity.summonables.TridentStormEntity;
+import net.firefoxsalesman.dungeonsmobs.entity.summonables.WindcallerTornadoEntity;
+import net.firefoxsalesman.dungeonsmobs.entity.summonables.WraithFireEntity;
+import net.firefoxsalesman.dungeonsmobs.entity.undead.FrozenZombieEntity;
+import net.firefoxsalesman.dungeonsmobs.entity.undead.JungleZombieEntity;
+import net.firefoxsalesman.dungeonsmobs.entity.undead.MossySkeletonEntity;
+import net.firefoxsalesman.dungeonsmobs.entity.undead.NecromancerEntity;
+import net.firefoxsalesman.dungeonsmobs.entity.undead.SkeletonVanguardEntity;
+import net.firefoxsalesman.dungeonsmobs.entity.undead.WraithEntity;
+import net.firefoxsalesman.dungeonsmobs.entity.water.DrownedNecromancerEntity;
+import net.firefoxsalesman.dungeonsmobs.entity.water.PoisonAnemoneEntity;
+import net.firefoxsalesman.dungeonsmobs.entity.water.QuickGrowingKelpEntity;
+import net.firefoxsalesman.dungeonsmobs.entity.water.SunkenSkeletonEntity;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.MobCategory;
+import net.minecraft.world.item.Item;
+import net.neoforged.neoforge.common.DeferredSpawnEggItem;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.neoforge.registries.DeferredRegister;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.neoforged.neoforge.registries.DeferredHolder;
+
+import static net.firefoxsalesman.dungeonsmobs.utils.GeneralHelper.modLoc;
+import static net.firefoxsalesman.dungeonsmobs.DungeonsMobs.MOD_ID;
+
+public class ModEntities {
+	public static final List<ResourceLocation> EGGS = new ArrayList<>();
+	public static final DeferredRegister<Item> SPAWN_EGGS = DeferredRegister.create(BuiltInRegistries.ITEM,
+			MOD_ID);
+	public static final List<String> ENTITY_IDS = new ObjectArrayList<>();
+
+	public static final DeferredRegister<EntityType<?>> ENTITY_TYPES = DeferredRegister
+			.create(BuiltInRegistries.ENTITY_TYPE, MOD_ID);
+
+	// ZOMBIES
+	public static final DeferredHolder<EntityType<?>, EntityType<JungleZombieEntity>> JUNGLE_ZOMBIE = registerEntity(
+			"jungle_zombie",
+			() -> EntityType.Builder.<JungleZombieEntity>of(JungleZombieEntity::new, MobCategory.MONSTER)
+					.sized(0.6F, 1.95F)
+					.clientTrackingRange(8)
+					.build(modLoc("jungle_zombie").toString()),
+			0x4f7d33, 0x00afa8);
+
+	public static final DeferredHolder<EntityType<?>, EntityType<FrozenZombieEntity>> FROZEN_ZOMBIE = registerEntity(
+			"frozen_zombie",
+			() -> EntityType.Builder.<FrozenZombieEntity>of(FrozenZombieEntity::new, MobCategory.MONSTER)
+					.sized(0.6F, 1.95F)
+					.clientTrackingRange(8)
+					.build(modLoc("frozen_zombie").toString()),
+			0x639694, 0xbae1ec);
+
+	// SKELETONS
+	public static final DeferredHolder<EntityType<?>, EntityType<MossySkeletonEntity>> MOSSY_SKELETON = registerEntity(
+			"mossy_skeleton",
+			() -> EntityType.Builder.<MossySkeletonEntity>of(MossySkeletonEntity::new, MobCategory.MONSTER)
+					.sized(0.6F, 1.99F)
+					.clientTrackingRange(8)
+					.build(modLoc("mossy_skeleton").toString()),
+			0xd6d7c6, 0x4a5d18);
+
+	public static final DeferredHolder<EntityType<?>, EntityType<SkeletonVanguardEntity>> SKELETON_VANGUARD = registerEntity(
+			"skeleton_vanguard",
+			() -> EntityType.Builder
+					.<SkeletonVanguardEntity>of(SkeletonVanguardEntity::new, MobCategory.MONSTER)
+					.sized(0.6F * 1.1F, 1.99F * 1.1F)
+					.clientTrackingRange(8)
+					.build(modLoc("skeleton_vanguard").toString()),
+			0x493615, 0xe8b42f);
+
+	public static final DeferredHolder<EntityType<?>, EntityType<NecromancerEntity>> NECROMANCER = registerEntity("necromancer",
+			() -> EntityType.Builder.<NecromancerEntity>of(NecromancerEntity::new, MobCategory.MONSTER)
+					.sized(0.6F * 1.3F, 1.99F * 1.3F)
+					.clientTrackingRange(8)
+					.build(modLoc("necromancer").toString()),
+			0x3f243d, 0x0b9cbb);
+
+	// ILLAGER
+	public static final DeferredHolder<EntityType<?>, EntityType<RoyalGuardEntity>> ROYAL_GUARD = registerEntity("royal_guard",
+			() -> EntityType.Builder.<RoyalGuardEntity>of(RoyalGuardEntity::new, MobCategory.MONSTER)
+					.sized(0.6F * 1.2F, 1.95F * 1.2F)
+					.clientTrackingRange(8)
+					.build(modLoc("royal_guard").toString()),
+			0x676767, 0x014675);
+
+	public static final DeferredHolder<EntityType<?>, EntityType<VindicatorChefEntity>> VINDICATOR_CHEF = registerEntity(
+			"vindicator_chef",
+			() -> EntityType.Builder
+					.<VindicatorChefEntity>of(VindicatorChefEntity::new, MobCategory.MONSTER)
+					.sized(0.6F, 1.95F).clientTrackingRange(8)
+					.build(modLoc("vindicator_chef").toString()),
+			0x676767, 0x014475);
+
+	public static final DeferredHolder<EntityType<?>, EntityType<ArmoredPillagerEntity>> ARMORED_PILLAGER = registerEntity(
+			"armored_pillager",
+			() -> EntityType.Builder
+					.<ArmoredPillagerEntity>of(ArmoredPillagerEntity::new,
+							MobCategory.MONSTER)
+					.sized(0.6F, 1.95F).clientTrackingRange(8)
+					.build(modLoc("armored_pillager").toString()),
+			0x676767, 0x014575);
+
+	public static final DeferredHolder<EntityType<?>, EntityType<ArmoredVindicatorEntity>> ARMORED_VINDICATOR = registerEntity(
+			"armored_vindicator",
+			() -> EntityType.Builder
+					.<ArmoredVindicatorEntity>of(ArmoredVindicatorEntity::new,
+							MobCategory.MONSTER)
+					.sized(0.6F, 1.95F).clientTrackingRange(8)
+					.build(modLoc("armored_vindicator").toString()),
+			0x676767, 0x014575);
+
+	public static final DeferredHolder<EntityType<?>, EntityType<IceologerEntity>> ICEOLOGER = registerEntity("iceologer",
+			() -> EntityType.Builder.<IceologerEntity>of(IceologerEntity::new, MobCategory.MONSTER)
+					.sized(0.6F, 1.95F)
+					.clientTrackingRange(8)
+					.build(modLoc("iceologer").toString()),
+			0x173873, 0xb6c6ca);
+
+	public static final DeferredHolder<EntityType<?>, EntityType<MageEntity>> MAGE = registerEntity("mage",
+			() -> EntityType.Builder.of(MageEntity::new, MobCategory.MONSTER)
+					.sized(0.6F, 1.95F)
+					.clientTrackingRange(8)
+					.build(modLoc("mage").toString()),
+			0x951f75, 0xe3ab58);
+
+	public static final DeferredHolder<EntityType<?>, EntityType<MageCloneEntity>> MAGE_CLONE = registerEntityWithoutEgg(
+			"mage_clone", () -> EntityType.Builder.of(MageCloneEntity::new, MobCategory.MONSTER)
+					.sized(0.6F, 1.95F)
+					.clientTrackingRange(8)
+					.build(modLoc("mage_clone").toString()));
+
+	public static final DeferredHolder<EntityType<?>, EntityType<GeomancerEntity>> GEOMANCER = registerEntity("geomancer",
+			() -> EntityType.Builder.of(GeomancerEntity::new, MobCategory.MONSTER)
+					.sized(0.6F, 1.95F)
+					.clientTrackingRange(8)
+					.build(modLoc("geomancer").toString()),
+			0x373b3b, 0x8b5ea3);
+
+	public static final DeferredHolder<EntityType<?>, EntityType<WindcallerEntity>> WINDCALLER = registerEntity("windcaller",
+			() -> EntityType.Builder.<WindcallerEntity>of(WindcallerEntity::new, MobCategory.MONSTER)
+					.sized(0.6F, 1.95F)
+					.clientTrackingRange(8)
+					.build(modLoc("windcaller").toString()),
+			0x348179, 0xdc6c46);
+
+	public static final DeferredHolder<EntityType<?>, EntityType<MountaineerEntity>> MOUNTAINEER = registerEntity("mountaineer",
+			() -> EntityType.Builder.<MountaineerEntity>of(MountaineerEntity::new, MobCategory.MONSTER)
+					.sized(0.6F, 1.95F)
+					.clientTrackingRange(8)
+					.build(modLoc("mountaineer").toString()),
+			0x715039, 0xe6e4d4);
+
+	// CREEPER
+
+	public static final DeferredHolder<EntityType<?>, EntityType<IcyCreeperEntity>> ICY_CREEPER = registerEntity("icy_creeper",
+			() -> EntityType.Builder.<IcyCreeperEntity>of(IcyCreeperEntity::new, MobCategory.MONSTER)
+					.sized(0.6F, 1.7F)
+					.clientTrackingRange(8)
+					.build(modLoc("icy_creeper").toString()),
+			0x5ccea5, 0xd9eef2);
+	// WRAITH
+
+	public static final DeferredHolder<EntityType<?>, EntityType<WraithEntity>> WRAITH = registerEntity("wraith",
+			() -> EntityType.Builder.of(WraithEntity::new, MobCategory.MONSTER)
+					.sized(0.6F, 1.99F)
+					.clientTrackingRange(8)
+					.build(modLoc("wraith").toString()),
+			0x0a2c40, 0x82d8f8);
+
+	// SLIME
+	public static final DeferredHolder<EntityType<?>, EntityType<ConjuredSlimeEntity>> CONJURED_SLIME = registerEntityWithoutEgg(
+			"conjured_slime",
+			() -> EntityType.Builder.<ConjuredSlimeEntity>of(ConjuredSlimeEntity::new, MobCategory.MONSTER)
+					.sized(2.04F, 2.04F)
+					.clientTrackingRange(10)
+					.build(modLoc("conjured_slime").toString()));
+
+	// REDSTONE
+	public static final DeferredHolder<EntityType<?>, EntityType<RedstoneGolemEntity>> REDSTONE_GOLEM = registerEntity(
+			"redstone_golem",
+			() -> EntityType.Builder.<RedstoneGolemEntity>of(RedstoneGolemEntity::new, MobCategory.MONSTER)
+					.sized(2.66F, 3.83F)
+					.clientTrackingRange(10)
+					.fireImmune()
+					.build(modLoc("redstone_golem").toString()),
+			0xaeaaa6, 0xe3260c);
+	public static final DeferredHolder<EntityType<?>, EntityType<RedstoneMonstrosityEntity>> REDSTONE_MONSTROSITY = registerEntity(
+			"redstone_monstrosity",
+			() -> EntityType.Builder
+					.<RedstoneMonstrosityEntity>of(RedstoneMonstrosityEntity::new,
+							MobCategory.MONSTER)
+					.sized(5.33F, 7F)
+					.clientTrackingRange(10)
+					.fireImmune()
+					.build(modLoc("redstone_monstrosity").toString()),
+			0xaeaaa6, 0xe3260c);
+	public static final DeferredHolder<EntityType<?>, EntityType<MooshroomMonstrosityEntity>> MOOSHROOM_MONSTROSITY = registerEntity(
+			"mooshroom_monstrosity",
+			() -> EntityType.Builder
+					.<MooshroomMonstrosityEntity>of(MooshroomMonstrosityEntity::new,
+							MobCategory.MONSTER)
+					.sized(5.33F, 7F)
+					.clientTrackingRange(10)
+					.fireImmune()
+					.build(modLoc("mooshroom_monstrosity").toString()),
+			0xaeaaa6, 0xe3260c);
+	public static final DeferredHolder<EntityType<?>, EntityType<RedstoneCubeEntity>> REDSTONE_CUBE = registerEntityWithoutEgg(
+			"redstone_cube",
+			() -> EntityType.Builder.<RedstoneCubeEntity>of(RedstoneCubeEntity::new, MobCategory.MONSTER)
+					.sized(1.0F, 1.0F)
+					.clientTrackingRange(10)
+					.fireImmune()
+					.build(modLoc("redstone_cube").toString()));
+	// GOLEM
+	public static final DeferredHolder<EntityType<?>, EntityType<SquallGolemEntity>> SQUALL_GOLEM = registerEntity("squall_golem",
+			() -> EntityType.Builder.<SquallGolemEntity>of(SquallGolemEntity::new, MobCategory.MONSTER)
+					.sized(1.9F, 2.75F) // 42 px wide, 29px tall + 16px of height
+					.clientTrackingRange(10)
+					.build(modLoc("squall_golem").toString()),
+			0x828f8f, 0xffd426);
+
+	// PIGLIN
+	public static final DeferredHolder<EntityType<?>, EntityType<FungusThrowerEntity>> FUNGUS_THROWER = registerEntity(
+			"fungus_thrower", () -> EntityType.Builder.of(FungusThrowerEntity::new, MobCategory.MONSTER)
+					.sized(0.6F, 1.95F)
+					.clientTrackingRange(8)
+					.build(modLoc("fungus_thrower").toString()),
+			10051392, 0x336baf);
+
+	public static final DeferredHolder<EntityType<?>, EntityType<ZombifiedFungusThrowerEntity>> ZOMBIFIED_FUNGUS_THROWER = registerEntity(
+			"zombified_fungus_thrower",
+			() -> EntityType.Builder.of(ZombifiedFungusThrowerEntity::new, MobCategory.MONSTER)
+					.fireImmune()
+					.sized(0.6F, 1.95F)
+					.clientTrackingRange(8)
+					.build(modLoc("zombified_fungus_thrower").toString()),
+			15373203, 0x336baf);
+	// JUNGLE
+	public static final DeferredHolder<EntityType<?>, EntityType<WhispererEntity>> WHISPERER = registerEntity("whisperer",
+			() -> EntityType.Builder.of(WhispererEntity::new, MobCategory.MONSTER)
+					.sized(0.8F, 2.25F)
+					.clientTrackingRange(10)
+					.build(modLoc("whisperer").toString()),
+			0x80a242, 0xe20703);
+
+	public static final DeferredHolder<EntityType<?>, EntityType<LeapleafEntity>> LEAPLEAF = registerEntity("leapleaf",
+			() -> EntityType.Builder.<LeapleafEntity>of(LeapleafEntity::new, MobCategory.MONSTER)
+					.sized(1.9F, 1.9F)
+					.clientTrackingRange(10)
+					.build(modLoc("leapleaf").toString()),
+			0x818a1a, 0x8a54ef);
+
+	public static final DeferredHolder<EntityType<?>, EntityType<QuickGrowingVineEntity>> QUICK_GROWING_VINE = registerEntity(
+			"quick_growing_vine",
+			() -> EntityType.Builder.of(QuickGrowingVineEntity::new, MobCategory.MONSTER)
+					// .fireImmune()
+					.sized(1.0F, 2.5F)
+					.clientTrackingRange(10)
+					.build(modLoc("quick_growing_vine").toString()),
+			0x90ad49, 0xfbc883);
+
+	public static final DeferredHolder<EntityType<?>, EntityType<PoisonQuillVineEntity>> POISON_QUILL_VINE = registerEntity(
+			"poison_quill_vine",
+			() -> EntityType.Builder.of(PoisonQuillVineEntity::new, MobCategory.MONSTER)
+					// .fireImmune()
+					.sized(1.0F, 2.5F)
+					.clientTrackingRange(10)
+					.build(modLoc("poison_quill_vine").toString()),
+			0x90ad49, 0x632cbb);
+
+	public static final DeferredHolder<EntityType<?>, EntityType<QuickGrowingKelpEntity>> QUICK_GROWING_KELP = registerEntity(
+			"quick_growing_kelp",
+			() -> EntityType.Builder.of(QuickGrowingKelpEntity::new, MobCategory.MONSTER)
+					.sized(1.0F, 2.5F)
+					.clientTrackingRange(10)
+					.build(modLoc("quick_growing_kelp").toString()),
+			0x2b9477, 0x0d8f99);
+
+	public static final DeferredHolder<EntityType<?>, EntityType<PoisonAnemoneEntity>> POISON_ANEMONE = registerEntity(
+			"poison_anemone", () -> EntityType.Builder.of(PoisonAnemoneEntity::new, MobCategory.MONSTER)
+					.sized(1.0F, 2.5F)
+					.clientTrackingRange(10)
+					.build(modLoc("poison_anemone").toString()),
+			0x2b9477, 0xc436cd);
+
+	// WATER
+	public static final DeferredHolder<EntityType<?>, EntityType<WaveWhispererEntity>> WAVEWHISPERER = registerEntity(
+			"wavewhisperer",
+			() -> EntityType.Builder.of(WaveWhispererEntity::new, MobCategory.MONSTER)
+					.sized(0.8F, 2.25F)
+					.clientTrackingRange(10)
+					.build(modLoc("wavewhisperer").toString()),
+			0x48a867, 0x69ebff);
+
+	public static final DeferredHolder<EntityType<?>, EntityType<DrownedNecromancerEntity>> DROWNED_NECROMANCER = registerEntity(
+			"drowned_necromancer",
+			() -> EntityType.Builder.of(DrownedNecromancerEntity::new, MobCategory.MONSTER)
+					.sized(0.6F * 1.5F, 1.95F * 1.5F)
+					.clientTrackingRange(8)
+					.build(modLoc("drowned_necromancer").toString()),
+			9433559, 0x274d72);
+	public static final DeferredHolder<EntityType<?>, EntityType<SunkenSkeletonEntity>> SUNKEN_SKELETON = registerEntity(
+			"sunken_skeleton", () -> EntityType.Builder.of(SunkenSkeletonEntity::new, MobCategory.MONSTER)
+					.sized(0.6F, 1.99F)
+					.clientTrackingRange(8)
+					.build(modLoc("sunken_skeleton").toString()),
+			0x87a964, 0xc06fe5);
+
+	// ENDER
+	public static final DeferredHolder<EntityType<?>, EntityType<EyeHolderEndersentEntity>> ENDERSENT_EYE_HOLDER = registerEntity(
+			"eye_holder_endersent",
+			() -> EntityType.Builder.of(EyeHolderEndersentEntity::new, MobCategory.MONSTER)
+					.sized(0.8F, 5.6F)
+					.clientTrackingRange(8)
+					.build(modLoc("eye_holder_endersent").toString()),
+			1447446, 0);
+
+	public static final DeferredHolder<EntityType<?>, EntityType<EndersentEntity>> ENDERSENT = registerEntity(
+			"endersent",
+			() -> EntityType.Builder.of(EndersentEntity::new, MobCategory.MONSTER)
+					.sized(0.8F, 5.6F)
+					.clientTrackingRange(8)
+					.build(modLoc("endersent").toString()),
+			1447446, 0);
+
+	public static final DeferredHolder<EntityType<?>, EntityType<BlastlingEntity>> BLASTLING = registerEntity("blastling",
+			() -> EntityType.Builder.of(BlastlingEntity::new, MobCategory.MONSTER)
+					.sized(0.6F, 2.4F)
+					.clientTrackingRange(8)
+					.build(modLoc("blastling").toString()),
+			0x03030a, 0x8900b0);
+
+	public static final DeferredHolder<EntityType<?>, EntityType<WatchlingEntity>> WATCHLING = registerEntity("watchling",
+			() -> EntityType.Builder.of(WatchlingEntity::new, MobCategory.MONSTER)
+					.sized(0.6F, 2.4F)
+					.clientTrackingRange(8)
+					.build(modLoc("watchling").toString()),
+			0x110e13, 0xff84f7);
+
+	public static final DeferredHolder<EntityType<?>, EntityType<SnarelingEntity>> SNARELING = registerEntity("snareling",
+			() -> EntityType.Builder.of(SnarelingEntity::new, MobCategory.MONSTER)
+					.sized(0.6F, 2.4F)
+					.clientTrackingRange(8)
+					.build(modLoc("snareling").toString()),
+			0x161616, 0xdbe64e);
+
+	// BLAZES
+
+	public static final DeferredHolder<EntityType<?>, EntityType<WildfireEntity>> WILDFIRE = registerEntity("wildfire",
+			() -> EntityType.Builder.of(WildfireEntity::new, MobCategory.MONSTER)
+					.fireImmune()
+					.sized(0.9F, 2.25F)
+					.clientTrackingRange(10)
+					.build(modLoc("wildfire").toString()),
+			0x8b3401, 0xffd528);
+
+	// PROJECTILES
+	public static final DeferredHolder<EntityType<?>, EntityType<SlimeballEntity>> SLIMEBALL = registerEntityWithoutEgg(
+			"slimeball",
+			() -> EntityType.Builder.<SlimeballEntity>of(SlimeballEntity::new, MobCategory.MISC)
+					.sized(0.3125F, 0.3125F)
+					.clientTrackingRange(4)
+					.updateInterval(10)
+					.build(modLoc("slimeball").toString()));
+	public static final DeferredHolder<EntityType<?>, EntityType<BlueNethershroomEntity>> BLUE_NETHERSHROOM = registerEntityWithoutEgg(
+			"blue_nethershroom",
+			() -> EntityType.Builder
+					.<BlueNethershroomEntity>of(BlueNethershroomEntity::new, MobCategory.MISC)
+					.sized(0.25F, 0.25F)
+					.clientTrackingRange(4)
+					.updateInterval(10)
+					.build(modLoc("blue_nethershroom").toString()));
+
+	public static final DeferredHolder<EntityType<?>, EntityType<GeomancerWallEntity>> GEOMANCER_WALL = registerEntityWithoutEgg(
+			"geomancer_wall",
+			() -> EntityType.Builder.<GeomancerWallEntity>of(GeomancerWallEntity::new, MobCategory.MISC)
+					.fireImmune()
+					.sized(1.0F, 2.5F)
+					.clientTrackingRange(6)
+					.updateInterval(2)
+					.build(modLoc("geomancer_wall").toString()));
+
+	public static final DeferredHolder<EntityType<?>, EntityType<GeomancerBombEntity>> GEOMANCER_BOMB = registerEntityWithoutEgg(
+			"geomancer_bomb",
+			() -> EntityType.Builder.<GeomancerBombEntity>of(GeomancerBombEntity::new, MobCategory.MISC)
+					.fireImmune()
+					.sized(1.0F, 2.5F)
+					.clientTrackingRange(6)
+					.updateInterval(2)
+					.build(modLoc("geomancer_bomb").toString()));
+
+	public static final DeferredHolder<EntityType<?>, EntityType<RedstoneMineEntity>> REDSTONE_MINE = registerEntityWithoutEgg(
+			"redstone_mine",
+			() -> EntityType.Builder.<RedstoneMineEntity>of(RedstoneMineEntity::new, MobCategory.MISC)
+					.fireImmune()
+					.sized(1.0F, 0.5F)
+					.clientTrackingRange(6)
+					.updateInterval(2)
+					.build(modLoc("redstone_mine").toString()));
+	public static final DeferredHolder<EntityType<?>, EntityType<RedstoneMonstrosityProjectileEntity>> REDSTONE_MONSTROSITY_PROJECTILE = registerEntityWithoutEgg(
+			"redstone_monstrosity_projectile",
+			() -> EntityType.Builder
+					.<RedstoneMonstrosityProjectileEntity>of(
+							RedstoneMonstrosityProjectileEntity::new, MobCategory.MISC)
+					.fireImmune()
+					.sized(0.25F, 0.25F)
+					.clientTrackingRange(6)
+					.updateInterval(2)
+					.build(modLoc("redstone_monstrosity_projectile").toString()));
+	public static final DeferredHolder<EntityType<?>, EntityType<MooshroomMonstrosityProjectileEntity>> MOOSHROOM_MONSTROSITY_PROJECTILE = registerEntityWithoutEgg(
+			"mooshroom_monstrosity_projectile",
+			() -> EntityType.Builder
+					.<MooshroomMonstrosityProjectileEntity>of(
+							MooshroomMonstrosityProjectileEntity::new, MobCategory.MISC)
+					.fireImmune()
+					.sized(0.25F, 0.25F)
+					.clientTrackingRange(6)
+					.updateInterval(2)
+					.build(modLoc("mooshroom_monstrosity_projectile").toString()));
+
+	public static final DeferredHolder<EntityType<?>, EntityType<WindcallerTornadoEntity>> TORNADO = registerEntityWithoutEgg(
+			"tornado",
+			() -> EntityType.Builder
+					.<WindcallerTornadoEntity>of(WindcallerTornadoEntity::new, MobCategory.MISC)
+					.fireImmune()
+					.sized(3.25F, 6F)
+					.clientTrackingRange(10)
+					.build(modLoc("tornado").toString()));
+
+	public static final DeferredHolder<EntityType<?>, EntityType<WindcallerBlastProjectileEntity>> WINDCALLER_BLAST_PROJECTILE = ENTITY_TYPES
+			.register("windcaller_blast_projectile", () -> EntityType.Builder
+					.<WindcallerBlastProjectileEntity>of(WindcallerBlastProjectileEntity::new,
+							MobCategory.MISC)
+					.fireImmune()
+					.sized(2F, 2F)
+					.build(modLoc("windcaller_blast_projectile").toString()));
+
+	public static final DeferredHolder<EntityType<?>, EntityType<TridentStormEntity>> TRIDENT_STORM = registerEntityWithoutEgg(
+			"trident_storm", () -> EntityType.Builder.of(TridentStormEntity::new, MobCategory.MISC)
+					.fireImmune()
+					.sized(2F, 32F)
+					.clientTrackingRange(10)
+					.build(modLoc("trident_storm").toString()));
+
+	public static final DeferredHolder<EntityType<?>, EntityType<NecromancerOrbEntity>> NECROMANCER_ORB = ENTITY_TYPES.register(
+			"necromancer_orb",
+			() -> EntityType.Builder.<NecromancerOrbEntity>of(NecromancerOrbEntity::new, MobCategory.MISC)
+					.fireImmune()
+					.sized(0.5F, 0.5F)
+					.updateInterval(1)
+					.build(modLoc("necromancer_orb")
+							.toString()));
+
+	public static final DeferredHolder<EntityType<?>, EntityType<DrownedNecromancerOrbEntity>> DROWNED_NECROMANCER_ORB = ENTITY_TYPES
+			.register("drowned_necromancer_orb", () -> EntityType.Builder
+					.<DrownedNecromancerOrbEntity>of(DrownedNecromancerOrbEntity::new,
+							MobCategory.MISC)
+					.fireImmune()
+					.sized(0.5F, 0.5F)
+					.updateInterval(1)
+					.build(modLoc("drowned_necromancer_orb").toString()));
+
+	public static final DeferredHolder<EntityType<?>, EntityType<PoisonQuillEntity>> POISON_QUILL = ENTITY_TYPES.register(
+			"poison_quill",
+			() -> EntityType.Builder.<PoisonQuillEntity>of(PoisonQuillEntity::new, MobCategory.MISC)
+					.fireImmune()
+					.sized(0.35F, 0.35F)
+					.updateInterval(1)
+					.build(modLoc("poison_quill").toString()));
+
+	public static final DeferredHolder<EntityType<?>, EntityType<MageMissileEntity>> MAGE_MISSILE = ENTITY_TYPES.register(
+			"mage_missile",
+			() -> EntityType.Builder.<MageMissileEntity>of(MageMissileEntity::new, MobCategory.MISC)
+					.fireImmune()
+					.sized(0.35F, 0.35F)
+					.updateInterval(1)
+					.build(modLoc("mage_missile").toString()));
+
+	public static final DeferredHolder<EntityType<?>, EntityType<CobwebProjectileEntity>> COBWEB_PROJECTILE = registerEntityWithoutEgg(
+			"cobweb_projectile",
+			() -> EntityType.Builder
+					.<CobwebProjectileEntity>of(CobwebProjectileEntity::new, MobCategory.MISC)
+					.sized(0.3125F, 0.3125F)
+					.clientTrackingRange(4)
+					.updateInterval(10)
+					.build(modLoc("cobweb_projectile").toString()));
+
+	public static final DeferredHolder<EntityType<?>, EntityType<SimpleTrapEntity>> SIMPLE_TRAP = registerEntityWithoutEgg(
+			"simple_trap", () -> EntityType.Builder.of(SimpleTrapEntity::new, MobCategory.MISC)
+					.fireImmune()
+					.sized(2.0F, 0.5F)
+					.clientTrackingRange(10)
+					.build(modLoc("simple_trap").toString()));
+
+	public static final DeferredHolder<EntityType<?>, EntityType<KelpTrapEntity>> KELP_TRAP = registerEntityWithoutEgg("kelp_trap",
+			() -> EntityType.Builder.of(KelpTrapEntity::new, MobCategory.MISC)
+					.fireImmune()
+					.sized(2.0F, 0.5F)
+					.clientTrackingRange(10)
+					.build(modLoc("kelp_trap").toString()));
+
+	public static final DeferredHolder<EntityType<?>, EntityType<WraithFireEntity>> WRAITH_FIRE = registerEntityWithoutEgg(
+			"wraith_fire", () -> EntityType.Builder.of(WraithFireEntity::new, MobCategory.MISC)
+					.fireImmune()
+					.sized(3.25F, 1.25F)
+					.clientTrackingRange(10)
+					.build(modLoc("wraith_fire").toString()));
+
+	public static final DeferredHolder<EntityType<?>, EntityType<AreaDamageEntity>> AREA_DAMAGE = registerEntityWithoutEgg(
+			"area_damage",
+			() -> EntityType.Builder.<AreaDamageEntity>of(AreaDamageEntity::new, MobCategory.MISC)
+					.fireImmune()
+					.sized(1.0F, 1.0F)
+					.clientTrackingRange(10)
+					.updateInterval(1)
+					.build(modLoc("area_damage").toString()));
+
+	public static final DeferredHolder<EntityType<?>, EntityType<BlastlingBulletEntity>> BLASTLING_BULLET = registerEntityWithoutEgg(
+			"blastling_bullet",
+			() -> EntityType.Builder.<BlastlingBulletEntity>of(BlastlingBulletEntity::new, MobCategory.MISC)
+					.sized(0.3F, 0.3F)
+					.clientTrackingRange(4)
+					.updateInterval(2)
+					.build(modLoc("blastling_bullet").toString()));
+
+	public static final DeferredHolder<EntityType<?>, EntityType<SnarelingGlobEntity>> SNARELING_GLOB = registerEntityWithoutEgg(
+			"snareling_glob",
+			() -> EntityType.Builder.<SnarelingGlobEntity>of(SnarelingGlobEntity::new, MobCategory.MISC)
+					.sized(0.6F, 0.6F)
+					.clientTrackingRange(4)
+					.updateInterval(2)
+					.build(modLoc("snareling_glob").toString()));
+
+	public static final DeferredHolder<EntityType<?>, EntityType<IceCloudEntity>> ICE_CLOUD = registerEntityWithoutEgg("ice_cloud",
+			() -> EntityType.Builder.<IceCloudEntity>of(IceCloudEntity::new, MobCategory.MISC)
+					.fireImmune()
+					.sized(2.0F, 1.0F)
+					.clientTrackingRange(6)
+					.updateInterval(1)
+					.build(modLoc("ice_cloud").toString()));
+
+	public static void register(IEventBus eventBus) {
+		ENTITY_TYPES.register(eventBus);
+		SPAWN_EGGS.register(eventBus);
+	}
+
+	private static <T extends Mob> DeferredHolder<EntityType<?>, EntityType<T>> registerEntity(String key,
+			Supplier<EntityType<T>> sup, int primaryColor, int secondaryColor) {
+		ENTITY_IDS.add(key);
+		DeferredHolder<EntityType<?>, EntityType<T>> entityType = ENTITY_TYPES.register(key, sup);
+		String eggName = key + "_spawn_egg";
+		SPAWN_EGGS.register(eggName, () -> new DeferredSpawnEggItem(entityType, primaryColor,
+				secondaryColor, new Item.Properties()));
+		EGGS.add(modLoc("models/item/" + eggName));
+		return entityType;
+	}
+
+	private static <T extends Entity> DeferredHolder<EntityType<?>, EntityType<T>> registerEntityWithoutEgg(String key,
+			Supplier<EntityType<T>> sup) {
+		ENTITY_IDS.add(key);
+		DeferredHolder<EntityType<?>, EntityType<T>> entityType = ENTITY_TYPES.register(key, sup);
+
+		return entityType;
+	}
+
+	public static Collection<DeferredHolder<Item, ? extends Item>> getEntries() {
+		return SPAWN_EGGS.getEntries();
+	}
+}

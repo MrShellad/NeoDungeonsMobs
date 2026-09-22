@@ -1,0 +1,239 @@
+package net.firefoxsalesman.dungeonsmobs.entity.illagers;
+
+import net.firefoxsalesman.dungeonsmobs.ModSoundEvents;
+import net.firefoxsalesman.dungeonsmobs.entity.ModEntities;
+import net.firefoxsalesman.dungeonsmobs.entity.summonables.IceCloudEntity;
+import net.firefoxsalesman.dungeonsmobs.goals.ApproachTargetGoal;
+import net.firefoxsalesman.dungeonsmobs.goals.LookAtTargetGoal;
+import net.firefoxsalesman.dungeonslibs.client.AnimationTimer;
+import net.firefoxsalesman.dungeonslibs.client.KeyframeEntity;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.tags.EntityTypeTags;
+import net.minecraft.world.DifficultyInstance;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.*;
+import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.ai.goal.*;
+import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
+import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
+import net.minecraft.world.entity.animal.IronGolem;
+import net.minecraft.world.entity.monster.AbstractIllager;
+import net.minecraft.world.entity.monster.Monster;
+import net.minecraft.world.entity.npc.AbstractVillager;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.raid.Raider;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.ServerLevelAccessor;
+import javax.annotation.Nullable;
+import java.util.EnumSet;
+import java.util.Map;
+import java.util.function.Predicate;
+
+public class IceologerEntity extends AbstractIllager implements KeyframeEntity {
+
+	private Map<String, AnimationState> animations;
+	private final AnimationTimer celebrationTimer = new AnimationTimer(35);
+
+	private final AnimationTimer summonTimer = new AnimationTimer(60);
+	private int summonAnimationActionPoint = 40;
+
+	public IceologerEntity(Level world) {
+		this(ModEntities.ICEOLOGER.get(), world);
+	}
+
+	public IceologerEntity(EntityType<? extends IceologerEntity> type, Level world) {
+		super(type, world);
+		animations = genStates("idle", "celebrate", "summon");
+	}
+
+	@Override
+	public boolean canBeLeader() {
+		return false;
+	}
+
+	protected void registerGoals() {
+		super.registerGoals();
+		this.goalSelector.addGoal(0, new FloatGoal(this));
+		this.goalSelector.addGoal(0, new IceologerEntity.SummonIceChunkGoal(this));
+		this.goalSelector.addGoal(1, new AvoidEntityGoal<>(this, AbstractVillager.class, 3.0F, 1.2D, 1.15D));
+		this.goalSelector.addGoal(1, new AvoidEntityGoal<>(this, Player.class, 3.0F, 1.2D, 1.2D));
+		this.goalSelector.addGoal(1, new AvoidEntityGoal<>(this, IronGolem.class, 3.0F, 1.3D, 1.15D));
+		this.goalSelector.addGoal(2, new ApproachTargetGoal(this, 10, 1.0D, true));
+		this.goalSelector.addGoal(3, new LookAtTargetGoal(this));
+		this.goalSelector.addGoal(8, new RandomStrollGoal(this, 1.0D));
+		this.goalSelector.addGoal(9, new LookAtPlayerGoal(this, Player.class, 3.0F, 1.0F));
+		this.goalSelector.addGoal(10, new LookAtPlayerGoal(this, Mob.class, 8.0F));
+		this.targetSelector.addGoal(1, (new HurtByTargetGoal(this, Raider.class)).setAlertOthers());
+		this.targetSelector.addGoal(2, (new NearestAttackableTargetGoal<>(this, Player.class, true))
+				.setUnseenMemoryTicks(600));
+		this.targetSelector.addGoal(3, (new NearestAttackableTargetGoal<>(this, AbstractVillager.class, false))
+				.setUnseenMemoryTicks(600));
+		this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, IronGolem.class, false)
+				.setUnseenMemoryTicks(600));
+	}
+
+	public void handleEntityEvent(byte event) {
+		if (event == 4)
+			summonTimer.reset();
+		else
+			super.handleEntityEvent(event);
+
+	}
+
+	public void baseTick() {
+		super.baseTick();
+		summonTimer.dec();
+	}
+
+	@Override
+	public void tick() {
+		super.tick();
+		if (level().isClientSide) {
+			setupAnimationStates();
+		}
+	}
+
+	private void setupAnimationStates() {
+		if (isCelebrating() && celebrationTimer.isRunning()) {
+			celebrationTimer.reset();
+			getState("celebrate").start(tickCount);
+		} else
+			celebrationTimer.dec();
+		getState("summon").animateWhen(summonTimer.isRunning(), tickCount);
+		getState("idle").animateWhen(
+				!isMoving() && isAlive() && !summonTimer.isRunning() && !isCelebrating(),
+				tickCount);
+	}
+
+	@Nullable
+	@Override
+	public SpawnGroupData finalizeSpawn(ServerLevelAccessor p_213386_1_, DifficultyInstance p_213386_2_,
+			MobSpawnType p_213386_3_, @Nullable SpawnGroupData p_213386_4_) {
+		SpawnGroupData iLivingEntityData = super.finalizeSpawn(p_213386_1_, p_213386_2_, p_213386_3_,
+				p_213386_4_);
+		this.populateDefaultEquipmentSlots(this.getRandom(), p_213386_2_);
+		this.populateDefaultEquipmentEnchantments(p_213386_1_, this.getRandom(), p_213386_2_);
+		return iLivingEntityData;
+	}
+
+	public static AttributeSupplier.Builder setCustomAttributes() {
+		return Monster.createMonsterAttributes().add(Attributes.MOVEMENT_SPEED, 0.25D)
+				.add(Attributes.FOLLOW_RANGE, 18D).add(Attributes.MAX_HEALTH, 20.0D);
+	}
+
+	/**
+	 * Returns whether this Entity is on the same team as the given Entity.
+	 */
+	public boolean isAlliedTo(Entity entityIn) {
+		if (super.isAlliedTo(entityIn)) {
+			return true;
+		} else if (entityIn instanceof LivingEntity
+				&& entityIn.getType().is(EntityTypeTags.ILLAGER)) {
+			return this.getTeam() == null && entityIn.getTeam() == null;
+		} else {
+			return false;
+		}
+	}
+
+	@Override
+	public void applyRaidBuffs(net.minecraft.server.level.ServerLevel level, int p_213660_1_, boolean p_213660_2_) {
+	}
+
+	@Override
+	protected SoundEvent getAmbientSound() {
+		return ModSoundEvents.ICEOLOGER_IDLE.get();
+	}
+
+	@Override
+	protected SoundEvent getDeathSound() {
+		return ModSoundEvents.ICEOLOGER_DEATH.get();
+	}
+
+	@Override
+	protected SoundEvent getHurtSound(DamageSource damageSourceIn) {
+		return ModSoundEvents.ICEOLOGER_HURT.get();
+	}
+
+	@Override
+	public SoundEvent getCelebrateSound() {
+		return ModSoundEvents.ICEOLOGER_ATTACK.get();
+	}
+
+	class SummonIceChunkGoal extends Goal {
+		public IceologerEntity mob;
+		@Nullable
+		public LivingEntity target;
+
+		private final Predicate<Entity> ICE_CHUNK = (p_33346_) -> {
+			return p_33346_ instanceof IceCloudEntity && ((IceCloudEntity) p_33346_).owner != null
+					&& ((IceCloudEntity) p_33346_).owner == mob;
+		};
+
+		public SummonIceChunkGoal(IceologerEntity mob) {
+			this.setFlags(EnumSet.of(Goal.Flag.MOVE, Goal.Flag.JUMP, Goal.Flag.LOOK));
+			this.mob = mob;
+			this.target = mob.getTarget();
+		}
+
+		@Override
+		public boolean isInterruptable() {
+			return false;
+		}
+
+		public boolean requiresUpdateEveryTick() {
+			return true;
+		}
+
+		@Override
+		public boolean canUse() {
+			target = mob.getTarget();
+			int nearbyChunks = mob.level().getEntities(mob, mob.getBoundingBox().inflate(20.0D), ICE_CHUNK)
+					.size();
+
+			return target != null && mob.random.nextInt(20) == 0 && mob.distanceTo(target) <= 12
+					&& nearbyChunks <= 0 && mob.hasLineOfSight(target) && animationsUseable();
+		}
+
+		@Override
+		public boolean canContinueToUse() {
+			return target != null && !animationsUseable();
+		}
+
+		@Override
+		public void start() {
+			mob.playSound(ModSoundEvents.ICEOLOGER_ATTACK.get(), 1.0F, mob.getVoicePitch());
+			mob.summonTimer.reset();
+			mob.level().broadcastEntityEvent(mob, (byte) 4);
+		}
+
+		@Override
+		public void tick() {
+			target = mob.getTarget();
+
+			if (target != null) {
+				mob.getLookControl().setLookAt(target.getX(), target.getEyeY(), target.getZ());
+			}
+
+			if (target != null && mob.summonTimer.tickEquals(summonAnimationActionPoint)) {
+				IceCloudEntity.spawn(mob, target);
+			}
+		}
+
+		public boolean animationsUseable() {
+			return mob.summonTimer.animationsUseable();
+		}
+
+	}
+
+	@Override
+	public Map<String, AnimationState> getStates() {
+		return animations;
+	}
+
+	@Override
+	public WalkAnimationState getWalkAnimation() {
+		return walkAnimation;
+	}
+}

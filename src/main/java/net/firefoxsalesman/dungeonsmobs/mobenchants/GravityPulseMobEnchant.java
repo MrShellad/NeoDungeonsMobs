@@ -1,0 +1,54 @@
+package net.firefoxsalesman.dungeonsmobs.mobenchants;
+
+import static net.firefoxsalesman.dungeonsmobs.DungeonsMobs.PROXY;
+
+import baguchi.enchantwithmob.mobenchant.MobEnchant;
+import net.firefoxsalesman.dungeonslibs.utils.AreaOfEffectHelper;
+import net.firefoxsalesman.dungeonsmobs.capabilities.properties.MobProps;
+import net.firefoxsalesman.dungeonsmobs.capabilities.properties.MobPropsHelper;
+import net.firefoxsalesman.dungeonsmobs.mod.ModMobEnchants;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.core.particles.SimpleParticleType;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.phys.Vec3;
+
+public class GravityPulseMobEnchant extends MobEnchant {
+	private static final double PULL_IN_SPEED_FACTOR = 0.1;
+
+	public GravityPulseMobEnchant(Properties properties) {
+		super(properties);
+	}
+
+	private static void pullVictimTowardsTarget(LivingEntity target, LivingEntity nearbyEntity,
+			SimpleParticleType particleType, Integer level) {
+		double motionX = target.getX() - (nearbyEntity.getX());
+		double motionY = target.getY() - (nearbyEntity.getY());
+		double motionZ = target.getZ() - (nearbyEntity.getZ());
+		Vec3 vector3d = new Vec3(motionX, motionY, motionZ).scale(PULL_IN_SPEED_FACTOR * level);
+
+		nearbyEntity.setDeltaMovement(vector3d);
+		PROXY.spawnParticles(nearbyEntity, particleType);
+	}
+
+	public static void doEffect(LivingEntity entity) {
+		NewMobEnchantUtils.executeIfPresentWithLevel(entity, ModMobEnchants.GRAVITY_PULSE.get(), (level) -> {
+			MobProps comboCap = MobPropsHelper.getMobPropsCapability(entity);
+			if (comboCap == null)
+				return;
+			int gravityPulseTimer = comboCap.getGravityPulseTimer();
+			if (gravityPulseTimer <= 0) {
+				PROXY.spawnParticles(entity, ParticleTypes.PORTAL);
+				AreaOfEffectHelper.applyToNearbyEntities(entity, 5F,
+						AreaOfEffectHelper.getCanApplyToEnemyPredicate(entity),
+						(LivingEntity nearbyEntity) -> {
+							pullVictimTowardsTarget(entity,
+									nearbyEntity, ParticleTypes.PORTAL,
+									level);
+						});
+				comboCap.setGravityPulseTimer(100);
+			} else {
+				comboCap.setGravityPulseTimer(gravityPulseTimer - 1);
+			}
+		});
+	}
+}

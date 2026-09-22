@@ -1,0 +1,219 @@
+package net.firefoxsalesman.dungeonsmobs.client;
+
+import net.neoforged.fml.common.EventBusSubscriber;
+
+import net.firefoxsalesman.dungeonsmobs.DungeonsMobs;
+import net.firefoxsalesman.dungeonsmobs.client.models.illager.WindcallerModel;
+import net.firefoxsalesman.dungeonsmobs.client.particle.CorruptedDustParticle;
+import net.firefoxsalesman.dungeonsmobs.client.particle.CorruptedMagicParticle;
+import net.firefoxsalesman.dungeonsmobs.client.particle.DustParticle;
+import net.firefoxsalesman.dungeonsmobs.client.particle.ModParticleTypes;
+import net.firefoxsalesman.dungeonsmobs.client.renderer.BossBarRenderer;
+import net.firefoxsalesman.dungeonsmobs.client.renderer.EmptyRenderer;
+import net.firefoxsalesman.dungeonsmobs.client.renderer.blaze.WildfireRenderer;
+import net.firefoxsalesman.dungeonsmobs.client.renderer.creeper.IcyCreeperRenderer;
+import net.firefoxsalesman.dungeonsmobs.client.renderer.ender.BlastlingRenderer;
+import net.firefoxsalesman.dungeonsmobs.client.renderer.ender.EndersentRenderer;
+import net.firefoxsalesman.dungeonsmobs.client.renderer.ender.EyeHolderEndersentRenderer;
+import net.firefoxsalesman.dungeonsmobs.client.renderer.ender.SnarelingRenderer;
+import net.firefoxsalesman.dungeonsmobs.client.renderer.ender.WatchlingRenderer;
+import net.firefoxsalesman.dungeonsmobs.client.renderer.golem.SquallGolemRenderer;
+import net.firefoxsalesman.dungeonsmobs.client.renderer.illager.ArmoredPillagerRenderer;
+import net.firefoxsalesman.dungeonsmobs.client.renderer.illager.ArmoredVindicatorRenderer;
+import net.firefoxsalesman.dungeonsmobs.client.renderer.illager.DefaultIllagerRenderer;
+import net.firefoxsalesman.dungeonsmobs.client.renderer.illager.GeomancerRenderer;
+import net.firefoxsalesman.dungeonsmobs.client.renderer.illager.IceologerRenderer;
+import net.firefoxsalesman.dungeonsmobs.client.renderer.illager.MageRenderer;
+import net.firefoxsalesman.dungeonsmobs.client.renderer.illager.MountaineerRenderer;
+import net.firefoxsalesman.dungeonsmobs.client.renderer.illager.RoyalGuardRenderer;
+import net.firefoxsalesman.dungeonsmobs.client.renderer.illager.VindicatorChefRenderer;
+import net.firefoxsalesman.dungeonsmobs.client.renderer.jungle.LeapleafRenderer;
+import net.firefoxsalesman.dungeonsmobs.client.renderer.jungle.PoisonQuillVineRenderer;
+import net.firefoxsalesman.dungeonsmobs.client.renderer.jungle.QuickGrowingVineRenderer;
+import net.firefoxsalesman.dungeonsmobs.client.renderer.jungle.WhispererRenderer;
+import net.firefoxsalesman.dungeonsmobs.client.renderer.piglin.CustomPiglinRenderer;
+import net.firefoxsalesman.dungeonsmobs.client.renderer.projectile.BlueNethershroomRenderer;
+import net.firefoxsalesman.dungeonsmobs.client.renderer.projectile.CobwebProjectileRenderer;
+import net.firefoxsalesman.dungeonsmobs.client.renderer.projectile.DrownedNecromancerOrbRenderer;
+import net.firefoxsalesman.dungeonsmobs.client.renderer.projectile.MageMissileRenderer;
+import net.firefoxsalesman.dungeonsmobs.client.renderer.projectile.OrbProjectileRenderer;
+import net.firefoxsalesman.dungeonsmobs.client.renderer.projectile.PoisonQuillRenderer;
+import net.firefoxsalesman.dungeonsmobs.client.renderer.projectile.SlimeballRenderer;
+import net.firefoxsalesman.dungeonsmobs.client.renderer.projectile.SnarelingGlobRenderer;
+import net.firefoxsalesman.dungeonsmobs.client.renderer.redstone.MooshroomMonstrosityProjectileRenderer;
+import net.firefoxsalesman.dungeonsmobs.client.renderer.redstone.MooshroomMonstrosityRenderer;
+import net.firefoxsalesman.dungeonsmobs.client.renderer.redstone.RedstoneCubeRenderer;
+import net.firefoxsalesman.dungeonsmobs.client.renderer.redstone.RedstoneGolemRenderer;
+import net.firefoxsalesman.dungeonsmobs.client.renderer.redstone.RedstoneMineRenderer;
+import net.firefoxsalesman.dungeonsmobs.client.renderer.redstone.RedstoneMonstrosityProjectileRenderer;
+import net.firefoxsalesman.dungeonsmobs.client.renderer.redstone.RedstoneMonstrosityRenderer;
+import net.firefoxsalesman.dungeonsmobs.client.renderer.slime.ConjuredSlimeRenderer;
+import net.firefoxsalesman.dungeonsmobs.client.renderer.summonables.GeomancerBombRenderer;
+import net.firefoxsalesman.dungeonsmobs.client.renderer.summonables.GeomancerWallRenderer;
+import net.firefoxsalesman.dungeonsmobs.client.renderer.summonables.IceCloudRenderer;
+import net.firefoxsalesman.dungeonsmobs.client.renderer.summonables.KelpTrapRenderer;
+import net.firefoxsalesman.dungeonsmobs.client.renderer.summonables.SimpleTrapRenderer;
+import net.firefoxsalesman.dungeonsmobs.client.renderer.summonables.TridentStormRenderer;
+import net.firefoxsalesman.dungeonsmobs.client.renderer.summonables.WindcallerTornadoRenderer;
+import net.firefoxsalesman.dungeonsmobs.client.renderer.summonables.WraithFireRenderer;
+import net.firefoxsalesman.dungeonsmobs.client.renderer.undead.CustomSkeletonRenderer;
+import net.firefoxsalesman.dungeonsmobs.client.renderer.undead.CustomZombieRenderer;
+import net.firefoxsalesman.dungeonsmobs.client.renderer.undead.NecromancerRenderer;
+import net.firefoxsalesman.dungeonsmobs.client.renderer.undead.SkeletonVanguardRenderer;
+import net.firefoxsalesman.dungeonsmobs.client.renderer.undead.WraithRenderer;
+import net.firefoxsalesman.dungeonsmobs.client.renderer.water.DrownedNecromancerRenderer;
+import net.firefoxsalesman.dungeonsmobs.client.renderer.water.PoisonAnemoneRenderer;
+import net.firefoxsalesman.dungeonsmobs.client.renderer.water.QuickGrowingKelpRenderer;
+import net.firefoxsalesman.dungeonsmobs.client.renderer.water.SunkenSkeletonRenderer;
+import net.firefoxsalesman.dungeonsmobs.client.renderer.water.WavewhispererRenderer;
+import net.firefoxsalesman.dungeonsmobs.entity.ModEntities;
+import net.firefoxsalesman.dungeonsmobs.items.shield.CustomISTER;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.model.geom.ModelLayers;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.item.DyeColor;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.neoforge.client.event.EntityRenderersEvent;
+import net.neoforged.neoforge.client.event.ModelEvent;
+import net.neoforged.neoforge.client.event.RegisterParticleProvidersEvent;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.bus.api.EventPriority;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
+
+@EventBusSubscriber(modid = DungeonsMobs.MOD_ID, bus = EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
+public class ClientEvents {
+	@SubscribeEvent
+	public static void clientInit(FMLClientSetupEvent event) {
+		NeoForge.EVENT_BUS.addListener(BossBarRenderer::renderBossBar);
+	}
+
+	@SubscribeEvent
+	public static void onRegisterRenderers(EntityRenderersEvent.RegisterRenderers event) {
+		event.registerEntityRenderer(ModEntities.JUNGLE_ZOMBIE.get(), CustomZombieRenderer::new);
+		event.registerEntityRenderer(ModEntities.FROZEN_ZOMBIE.get(), CustomZombieRenderer::new);
+		// To match Husk proportions found in MCD
+		event.registerEntityRenderer(EntityType.HUSK, CustomZombieRenderer::new);
+
+		event.registerEntityRenderer(ModEntities.MOSSY_SKELETON.get(), CustomSkeletonRenderer::new);
+		event.registerEntityRenderer(ModEntities.NECROMANCER.get(), NecromancerRenderer::new);
+		event.registerEntityRenderer(ModEntities.SKELETON_VANGUARD.get(), SkeletonVanguardRenderer::new);
+
+		event.registerEntityRenderer(ModEntities.ROYAL_GUARD.get(), RoyalGuardRenderer::new);
+		event.registerEntityRenderer(ModEntities.MOUNTAINEER.get(), MountaineerRenderer::new);
+		event.registerEntityRenderer(ModEntities.ARMORED_PILLAGER.get(),
+				ArmoredPillagerRenderer::new);
+		event.registerEntityRenderer(ModEntities.ARMORED_VINDICATOR.get(),
+				ArmoredVindicatorRenderer::new);
+		event.registerEntityRenderer(ModEntities.VINDICATOR_CHEF.get(), VindicatorChefRenderer::new);
+		event.registerEntityRenderer(ModEntities.ICEOLOGER.get(), IceologerRenderer::new);
+		event.registerEntityRenderer(ModEntities.GEOMANCER.get(), GeomancerRenderer::new);
+		event.registerEntityRenderer(ModEntities.MAGE.get(), MageRenderer::new);
+		event.registerEntityRenderer(ModEntities.MAGE_CLONE.get(), MageRenderer::new);
+		event.registerEntityRenderer(ModEntities.WINDCALLER.get(),
+				manager -> new DefaultIllagerRenderer<>(manager, new WindcallerModel()));
+
+		event.registerEntityRenderer(ModEntities.REDSTONE_CUBE.get(), RedstoneCubeRenderer::new);
+		event.registerEntityRenderer(ModEntities.REDSTONE_GOLEM.get(), RedstoneGolemRenderer::new);
+		event.registerEntityRenderer(ModEntities.REDSTONE_MONSTROSITY.get(), RedstoneMonstrosityRenderer::new);
+		event.registerEntityRenderer(ModEntities.MOOSHROOM_MONSTROSITY.get(),
+				MooshroomMonstrosityRenderer::new);
+
+		event.registerEntityRenderer(ModEntities.WHISPERER.get(), WhispererRenderer::new);
+		event.registerEntityRenderer(ModEntities.LEAPLEAF.get(), LeapleafRenderer::new);
+		event.registerEntityRenderer(ModEntities.POISON_QUILL_VINE.get(), PoisonQuillVineRenderer::new);
+		event.registerEntityRenderer(ModEntities.QUICK_GROWING_VINE.get(), QuickGrowingVineRenderer::new);
+
+		event.registerEntityRenderer(ModEntities.POISON_QUILL.get(), PoisonQuillRenderer::new);
+		event.registerEntityRenderer(ModEntities.MAGE_MISSILE.get(), MageMissileRenderer::new);
+
+		event.registerEntityRenderer(ModEntities.ICY_CREEPER.get(), IcyCreeperRenderer::new);
+
+		event.registerEntityRenderer(ModEntities.WRAITH.get(), WraithRenderer::new);
+
+		event.registerEntityRenderer(ModEntities.CONJURED_SLIME.get(), ConjuredSlimeRenderer::new);
+
+		event.registerEntityRenderer(ModEntities.SIMPLE_TRAP.get(), SimpleTrapRenderer::new);
+		event.registerEntityRenderer(ModEntities.KELP_TRAP.get(), KelpTrapRenderer::new);
+
+		event.registerEntityRenderer(ModEntities.WAVEWHISPERER.get(), WavewhispererRenderer::new);
+		event.registerEntityRenderer(ModEntities.POISON_ANEMONE.get(), PoisonAnemoneRenderer::new);
+		event.registerEntityRenderer(ModEntities.QUICK_GROWING_KELP.get(), QuickGrowingKelpRenderer::new);
+		event.registerEntityRenderer(ModEntities.DROWNED_NECROMANCER.get(), DrownedNecromancerRenderer::new);
+		event.registerEntityRenderer(ModEntities.SUNKEN_SKELETON.get(), SunkenSkeletonRenderer::new);
+
+		event.registerEntityRenderer(ModEntities.SQUALL_GOLEM.get(), SquallGolemRenderer::new);
+
+		event.registerEntityRenderer(EntityType.PIGLIN,
+				manager -> new CustomPiglinRenderer(manager, ModelLayers.PIGLIN,
+						ModelLayers.PIGLIN_INNER_ARMOR, ModelLayers.PIGLIN_OUTER_ARMOR, false,
+						false));
+		event.registerEntityRenderer(EntityType.ZOMBIFIED_PIGLIN,
+				manager -> new CustomPiglinRenderer(manager, ModelLayers.ZOMBIFIED_PIGLIN,
+						ModelLayers.ZOMBIFIED_PIGLIN_INNER_ARMOR,
+						ModelLayers.ZOMBIFIED_PIGLIN_OUTER_ARMOR, true, false));
+		event.registerEntityRenderer(ModEntities.FUNGUS_THROWER.get(),
+				manager -> new CustomPiglinRenderer(manager, ModelLayers.PIGLIN,
+						ModelLayers.PIGLIN_INNER_ARMOR, ModelLayers.PIGLIN_OUTER_ARMOR, false,
+						true));
+		event.registerEntityRenderer(ModEntities.ZOMBIFIED_FUNGUS_THROWER.get(),
+				manager -> new CustomPiglinRenderer(manager, ModelLayers.ZOMBIFIED_PIGLIN,
+						ModelLayers.ZOMBIFIED_PIGLIN_INNER_ARMOR,
+						ModelLayers.ZOMBIFIED_PIGLIN_OUTER_ARMOR, true, true));
+
+		event.registerEntityRenderer(ModEntities.NECROMANCER_ORB.get(), OrbProjectileRenderer::new);
+		event.registerEntityRenderer(ModEntities.DROWNED_NECROMANCER_ORB.get(),
+				DrownedNecromancerOrbRenderer::new);
+
+		event.registerEntityRenderer(ModEntities.TRIDENT_STORM.get(), TridentStormRenderer::new);
+
+		event.registerEntityRenderer(ModEntities.ENDERSENT.get(), EndersentRenderer::new);
+		event.registerEntityRenderer(ModEntities.ENDERSENT_EYE_HOLDER.get(), EyeHolderEndersentRenderer::new);
+		event.registerEntityRenderer(ModEntities.BLASTLING.get(), BlastlingRenderer::new);
+		event.registerEntityRenderer(ModEntities.WATCHLING.get(), WatchlingRenderer::new);
+		event.registerEntityRenderer(ModEntities.SNARELING.get(), SnarelingRenderer::new);
+
+		event.registerEntityRenderer(ModEntities.WILDFIRE.get(), WildfireRenderer::new);
+
+		event.registerEntityRenderer(ModEntities.ICE_CLOUD.get(), IceCloudRenderer::new);
+		event.registerEntityRenderer(ModEntities.REDSTONE_MINE.get(), RedstoneMineRenderer::new);
+		event.registerEntityRenderer(ModEntities.REDSTONE_MONSTROSITY_PROJECTILE.get(),
+				RedstoneMonstrosityProjectileRenderer::new);
+		event.registerEntityRenderer(ModEntities.MOOSHROOM_MONSTROSITY_PROJECTILE.get(),
+				MooshroomMonstrosityProjectileRenderer::new);
+		event.registerEntityRenderer(ModEntities.TORNADO.get(), WindcallerTornadoRenderer::new);
+		event.registerEntityRenderer(ModEntities.WINDCALLER_BLAST_PROJECTILE.get(), EmptyRenderer::new);
+
+		event.registerEntityRenderer(ModEntities.WRAITH_FIRE.get(), WraithFireRenderer::new);
+
+		event.registerEntityRenderer(ModEntities.BLASTLING_BULLET.get(),
+				(manager) -> new OrbProjectileRenderer(manager, 0xFFFF93F7, false));
+		event.registerEntityRenderer(ModEntities.SNARELING_GLOB.get(), SnarelingGlobRenderer::new);
+		event.registerEntityRenderer(ModEntities.SLIMEBALL.get(), SlimeballRenderer::new);
+		event.registerEntityRenderer(ModEntities.COBWEB_PROJECTILE.get(), CobwebProjectileRenderer::new);
+		event.registerEntityRenderer(ModEntities.BLUE_NETHERSHROOM.get(), BlueNethershroomRenderer::new);
+		event.registerEntityRenderer(ModEntities.GEOMANCER_WALL.get(), GeomancerWallRenderer::new);
+		event.registerEntityRenderer(ModEntities.GEOMANCER_BOMB.get(), GeomancerBombRenderer::new);
+
+		event.registerEntityRenderer(ModEntities.AREA_DAMAGE.get(), EmptyRenderer::new);
+	}
+
+	@SubscribeEvent(priority = EventPriority.LOWEST)
+	public static void onParticleFactory(RegisterParticleProvidersEvent event) {
+		Minecraft.getInstance().particleEngine.register(ModParticleTypes.DUST.get(),
+				DustParticle.Factory::new);
+		Minecraft.getInstance().particleEngine.register(ModParticleTypes.CORRUPTED_MAGIC.get(),
+				CorruptedMagicParticle.Factory::new);
+		Minecraft.getInstance().particleEngine.register(ModParticleTypes.CORRUPTED_DUST.get(),
+				CorruptedDustParticle.Factory::new);
+	}
+
+	@SubscribeEvent
+	public static void onClientSetup(ModelEvent.RegisterAdditional event) {
+		event.register(CustomISTER.getTridentMRL(DyeColor.YELLOW, false));
+		event.register(CustomISTER.getTridentMRL(DyeColor.PURPLE, false));
+		event.register(CustomISTER.getTridentMRL(DyeColor.YELLOW, true));
+		event.register(CustomISTER.getTridentMRL(DyeColor.PURPLE, true));
+	}
+}

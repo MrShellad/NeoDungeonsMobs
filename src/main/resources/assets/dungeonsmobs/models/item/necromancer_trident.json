@@ -1,0 +1,14 @@
+{	"loader": "neoforge:separate_transforms",
+	"gui_light": "front",
+	"base": {
+		"parent": "dungeonsmobs:item/necromancer_trident_3d"
+	},
+	"perspectives": {
+		"gui": {
+			"parent": "dungeonsmobs:item/necromancer_trident_inventory"
+		},
+		"fixed": {
+			"parent": "dungeonsmobs:item/necromancer_trident_inventory"
+		}
+	}
+}

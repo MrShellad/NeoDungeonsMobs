@@ -1,0 +1,18 @@
+{
+  "type": "dungeonsmobs:add_spawns",
+  "structures": "#dungeonsmobs:jungle_temples",
+  "spawners": [
+    {
+      "type": "dungeonsmobs:whisperer",
+      "weight": 2,
+      "minCount": 1,
+      "maxCount": 1
+    },
+    {
+      "type": "dungeonsmobs:leapleaf",
+      "weight": 1,
+      "minCount": 1,
+      "maxCount": 1
+    }
+  ]
+}

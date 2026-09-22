@@ -1,0 +1,486 @@
+package net.firefoxsalesman.dungeonsmobs.entity.illagers;
+
+import java.util.EnumSet;
+import java.util.Map;
+import java.util.function.Predicate;
+
+import javax.annotation.Nullable;
+
+import net.firefoxsalesman.dungeonsmobs.ModSoundEvents;
+import net.firefoxsalesman.dungeonsmobs.entity.ModEntities;
+import net.firefoxsalesman.dungeonsmobs.goals.ApproachTargetGoal;
+import net.firefoxsalesman.dungeonsmobs.goals.LookAtTargetGoal;
+import net.firefoxsalesman.dungeonslibs.client.AnimationTimer;
+import net.firefoxsalesman.dungeonslibs.client.KeyframeEntity;
+import net.firefoxsalesman.dungeonslibs.entities.SummonSpotEntity;
+import net.firefoxsalesman.dungeonslibs.entities.LibEntityTypes;
+import net.firefoxsalesman.dungeonslibs.utils.PositionUtils;
+import net.minecraft.commands.arguments.EntityAnchorArgument;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.world.DifficultyInstance;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.AnimationState;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.tags.EntityTypeTags;
+import net.minecraft.world.entity.NeutralMob;
+import net.minecraft.world.entity.SpawnGroupData;
+import net.minecraft.world.entity.WalkAnimationState;
+import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.ai.goal.AvoidEntityGoal;
+import net.minecraft.world.entity.ai.goal.FloatGoal;
+import net.minecraft.world.entity.ai.goal.Goal;
+import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
+import net.minecraft.world.entity.ai.goal.RandomStrollGoal;
+import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
+import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
+import net.minecraft.world.entity.animal.IronGolem;
+import net.minecraft.world.entity.monster.AbstractIllager;
+import net.minecraft.world.entity.monster.Monster;
+import net.minecraft.world.entity.npc.AbstractVillager;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.raid.Raider;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.ServerLevelAccessor;
+import net.minecraft.world.phys.Vec3;
+
+public class MageEntity extends AbstractIllager implements KeyframeEntity {
+	private Map<String, AnimationState> states;
+
+	private final AnimationTimer celebrationTimer = new AnimationTimer(35);
+	private final AnimationTimer attackTimer = new AnimationTimer(50);
+	private final AnimationTimer vanishTimer = new AnimationTimer(23);
+	private final AnimationTimer appearTimer = new AnimationTimer(25);
+
+	private int appearDelay = 0;
+
+	public MageEntity(EntityType<? extends MageEntity> type, Level world) {
+		super(type, world);
+		states = genStates("idle", "celebrate", "attack", "vanish", "appear");
+	}
+
+	@Override
+	public boolean canBeLeader() {
+		return false;
+	}
+
+	protected void registerGoals() {
+		super.registerGoals();
+		goalSelector.addGoal(0, new FloatGoal(this));
+		goalSelector.addGoal(0, new MageEntity.RemainStationaryGoal());
+		goalSelector.addGoal(1, new MageEntity.CreateIllusionsGoal(this));
+		goalSelector.addGoal(2, new MageEntity.LevitateTargetAttackGoal(this));
+		goalSelector.addGoal(3, new AvoidEntityGoal<>(this, AbstractVillager.class, 5.0F, 1.2D, 1.15D));
+		goalSelector.addGoal(3, new AvoidEntityGoal<>(this, Player.class, 5.0F, 1.2D, 1.2D));
+		goalSelector.addGoal(3, new AvoidEntityGoal<>(this, IronGolem.class, 5.0F, 1.3D, 1.15D));
+		goalSelector.addGoal(4, new ApproachTargetGoal(this, 14, 1.0D, true));
+		goalSelector.addGoal(5, new LookAtTargetGoal(this));
+		goalSelector.addGoal(8, new RandomStrollGoal(this, 1.0D));
+		goalSelector.addGoal(9, new LookAtPlayerGoal(this, Player.class, 3.0F, 1.0F));
+		goalSelector.addGoal(10, new LookAtPlayerGoal(this, Mob.class, 8.0F));
+		targetSelector.addGoal(1, (new HurtByTargetGoal(this, Raider.class)).setAlertOthers());
+		targetSelector.addGoal(2, (new NearestAttackableTargetGoal<>(this, Player.class, true))
+				.setUnseenMemoryTicks(600));
+		targetSelector.addGoal(3, (new NearestAttackableTargetGoal<>(this, AbstractVillager.class, false))
+				.setUnseenMemoryTicks(600));
+		targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, IronGolem.class, false)
+				.setUnseenMemoryTicks(600));
+	}
+
+	public boolean shouldBeStationary() {
+		return appearTimer.isRunning() || appearDelay > 0;
+	}
+
+	public void handleEntityEvent(byte event) {
+		if (event == 4)
+			attackTimer.reset();
+		else if (event == 6) {
+			appearDelay = 11;
+		} else if (event == 7) {
+			for (int i = 0; i < 20; ++i) {
+				double d0 = random.nextGaussian() * 0.02D;
+				double d1 = random.nextGaussian() * 0.02D;
+				double d2 = random.nextGaussian() * 0.02D;
+				level().addParticle(ParticleTypes.POOF, getRandomX(1.0D), getRandomY(),
+						getRandomZ(1.0D), d0, d1, d2);
+			}
+		} else if (event == 8) {
+			vanishTimer.reset();
+		} else if (event == 9) {
+			appearTimer.reset();
+		} else {
+			super.handleEntityEvent(event);
+		}
+	}
+
+	@Override
+	public void tick() {
+		super.tick();
+		if (level().isClientSide) {
+			setupAnimationStates();
+		}
+	}
+
+	private void setupAnimationStates() {
+		if (isCelebrating() && celebrationTimer.animationsUseable()) {
+			celebrationTimer.reset();
+			getState("celebrate").start(tickCount);
+		} else {
+			celebrationTimer.dec();
+		}
+		getState("attack").animateWhen(attackTimer.isRunning() && !isCelebrating(), tickCount);
+		getState("vanish").animateWhen(vanishTimer.isRunning() && !attackTimer.isRunning() && !isCelebrating(),
+				tickCount);
+		getState("appear").animateWhen(
+				appearTimer.isRunning() && !vanishTimer.isRunning() && !attackTimer.isRunning()
+						&& !isCelebrating(),
+				tickCount);
+		getState("idle").animateWhen(
+				!appearTimer.isRunning() && !vanishTimer.isRunning() && !attackTimer.isRunning()
+						&& !isMoving() && !isCelebrating() && isAlive(),
+				tickCount);
+	}
+
+	public void baseTick() {
+		super.baseTick();
+		tickDownAnimTimers();
+
+		if (appearDelay > 0) {
+			appearDelay--;
+		}
+
+		if (!level().isClientSide && appearDelay == 1) {
+			appearTimer.reset();
+			level().broadcastEntityEvent(this, (byte) 9);
+		}
+	}
+
+	public void tickDownAnimTimers() {
+		if (attackTimer.isRunning())
+			attackTimer.dec();
+		if (vanishTimer.isRunning())
+			vanishTimer.dec();
+		if (appearTimer.isRunning())
+			appearTimer.dec();
+	}
+
+	@Nullable
+	@Override
+	public SpawnGroupData finalizeSpawn(ServerLevelAccessor p_213386_1_, DifficultyInstance p_213386_2_,
+			MobSpawnType p_213386_3_, @Nullable SpawnGroupData p_213386_4_) {
+		SpawnGroupData iLivingEntityData = super.finalizeSpawn(p_213386_1_, p_213386_2_, p_213386_3_,
+				p_213386_4_);
+		populateDefaultEquipmentSlots(getRandom(), p_213386_2_);
+		populateDefaultEquipmentEnchantments(p_213386_1_, getRandom(), p_213386_2_);
+		return iLivingEntityData;
+	}
+
+	public static AttributeSupplier.Builder setCustomAttributes() {
+		return Monster.createMonsterAttributes().add(Attributes.MOVEMENT_SPEED, 0.25D)
+				.add(Attributes.FOLLOW_RANGE, 30.0D).add(Attributes.MAX_HEALTH, 40.0D);
+	}
+
+	/**
+	 * Returns whether this Entity is on the same team as the given Entity.
+	 */
+	public boolean isAlliedTo(Entity entityIn) {
+		if (super.isAlliedTo(entityIn)) {
+			return true;
+		} else if (entityIn instanceof LivingEntity
+				&& entityIn.getType().is(EntityTypeTags.ILLAGER)) {
+			return getTeam() == null && entityIn.getTeam() == null;
+		} else {
+			return false;
+		}
+	}
+
+	@Override
+	public void applyRaidBuffs(net.minecraft.server.level.ServerLevel level, int p_213660_1_, boolean p_213660_2_) {
+	}
+
+	@Override
+	protected SoundEvent getAmbientSound() {
+		return SoundEvents.ILLUSIONER_AMBIENT;
+	}
+
+	@Override
+	protected SoundEvent getDeathSound() {
+		return ModSoundEvents.ILLUSIONER_DEATH.get();
+	}
+
+	@Override
+	protected SoundEvent getHurtSound(DamageSource damageSourceIn) {
+		return ModSoundEvents.ENCHANTER_HURT.get();
+	}
+
+	@Override
+	public SoundEvent getCelebrateSound() {
+		return SoundEvents.ILLUSIONER_AMBIENT;
+	}
+
+	class CreateIllusionsGoal extends Goal {
+		public MageEntity mob;
+		@Nullable
+		public LivingEntity target;
+
+		public int nextUseTime;
+
+		private final Predicate<Entity> MAGE_CLONE = (p_33346_) -> {
+			return p_33346_ instanceof MageCloneEntity && ((MageCloneEntity) p_33346_).getOwner() != null
+					&& ((MageCloneEntity) p_33346_).getOwner() == mob;
+		};
+
+		public CreateIllusionsGoal(MageEntity mob) {
+			setFlags(EnumSet.of(Goal.Flag.MOVE, Goal.Flag.JUMP, Goal.Flag.LOOK));
+			this.mob = mob;
+			target = mob.getTarget();
+		}
+
+		@Override
+		public boolean isInterruptable() {
+			return mob.shouldBeStationary();
+		}
+
+		public boolean requiresUpdateEveryTick() {
+			return true;
+		}
+
+		@Override
+		public boolean canUse() {
+			target = mob.getTarget();
+
+			int nearbyClones = mob.level().getEntities(mob, mob.getBoundingBox().inflate(30.0D), MAGE_CLONE)
+					.size();
+
+			return target != null && mob.tickCount >= nextUseTime && mob.random.nextInt(10) == 0
+					&& mob.hasLineOfSight(target) && nearbyClones <= 0 && animationsUseable();
+		}
+
+		@Override
+		public boolean canContinueToUse() {
+			return target != null && !animationsUseable();
+		}
+
+		@Override
+		public void start() {
+			mob.playSound(SoundEvents.ILLUSIONER_PREPARE_MIRROR, 1.0F, 1.0F);
+			mob.vanishTimer.reset();
+			mob.level().broadcastEntityEvent(mob, (byte) 8);
+		}
+
+		@Override
+		public void tick() {
+			target = mob.getTarget();
+
+			mob.getNavigation().stop();
+
+			if (target != null) {
+				mob.getLookControl().setLookAt(target.getX(), target.getEyeY(), target.getZ());
+			}
+
+			if (target != null && mob.vanishTimer.tickEquals(1)) {
+				SummonSpotEntity summonSpot = LibEntityTypes.SUMMON_SPOT.get().create(mob.level());
+				summonSpot.moveTo(target.blockPosition().offset((int) -12.5 + mob.random.nextInt(25), 0,
+						(int) -12.5 + mob.random.nextInt(25)), 0.0F, 0.0F);
+				summonSpot.setSummonType(3);
+				((ServerLevel) mob.level()).addFreshEntityWithPassengers(summonSpot);
+				PositionUtils.moveToCorrectHeight(summonSpot);
+
+				mob.level().broadcastEntityEvent(mob, (byte) 7);
+				mob.moveTo(summonSpot.blockPosition(), 0.0F, 0.0F);
+				mob.setYBodyRot(mob.random.nextInt(360));
+				mob.lookAt(EntityAnchorArgument.Anchor.EYES,
+						new Vec3(mob.getX(), mob.getEyeY(), mob.getZ()));
+				mob.appearDelay = 11;
+				mob.level().broadcastEntityEvent(mob, (byte) 6);
+				mob.playSound(SoundEvents.ILLUSIONER_MIRROR_MOVE, 1.0F, 1.0F);
+				PositionUtils.moveToCorrectHeight(mob);
+
+				if (target instanceof Mob) {
+					((Mob) target).setTarget(null);
+					target.setLastHurtByMob(null);
+					if (target instanceof NeutralMob) {
+						((NeutralMob) target).stopBeingAngry();
+						((NeutralMob) target).setLastHurtByMob(null);
+						((NeutralMob) target).setTarget(null);
+						((NeutralMob) target).setPersistentAngerTarget(null);
+					}
+				}
+
+				int clonesByDifficulty = mob.level().getCurrentDifficultyAt(mob.blockPosition())
+						.getDifficulty().getId();
+
+				for (int i = 0; i < clonesByDifficulty * 4; i++) {
+					SummonSpotEntity cloneSummonSpot = LibEntityTypes.SUMMON_SPOT.get()
+							.create(mob.level());
+					cloneSummonSpot.moveTo(
+							target.blockPosition().offset(
+									(int) -12.5 + mob.random.nextInt(25), 0,
+									(int) -12.5 + mob.random.nextInt(25)),
+							0.0F, 0.0F);
+					cloneSummonSpot.setSummonType(3);
+					cloneSummonSpot.mobSpawnRotation = mob.random.nextInt(360);
+					((ServerLevel) mob.level()).addFreshEntityWithPassengers(cloneSummonSpot);
+					PositionUtils.moveToCorrectHeight(cloneSummonSpot);
+
+					MageCloneEntity clone = ModEntities.MAGE_CLONE.get().create(mob.level());
+					clone.finalizeSpawn(((ServerLevel) mob.level()),
+							mob.level().getCurrentDifficultyAt(
+									cloneSummonSpot.blockPosition()),
+							MobSpawnType.MOB_SUMMONED, null);
+					clone.setOwner(mob);
+					clone.setHealth(mob.getHealth());
+					for (EquipmentSlot equipmentslottype : EquipmentSlot.values()) {
+						ItemStack itemstack = mob.getItemBySlot(equipmentslottype);
+						if (!itemstack.isEmpty()) {
+							clone.setItemSlot(equipmentslottype, itemstack.copy());
+							clone.setDropChance(equipmentslottype, 0.0F);
+						}
+					}
+					clone.lookAt(EntityAnchorArgument.Anchor.EYES,
+							new Vec3(mob.getX(), mob.getEyeY(), mob.getZ()));
+					clone.setDelayedAppear(true);
+					cloneSummonSpot.summonedEntity = clone;
+					cloneSummonSpot.playSound(SoundEvents.ILLUSIONER_MIRROR_MOVE, 1.0F, 1.0F);
+				}
+			}
+		}
+
+		public boolean animationsUseable() {
+			return mob.vanishTimer.animationsUseable();
+		}
+
+		@Override
+		public void stop() {
+			super.stop();
+			nextUseTime = mob.tickCount + 60;
+		}
+
+	}
+
+	class LevitateTargetAttackGoal extends Goal {
+		public MageEntity mob;
+		@Nullable
+		public LivingEntity target;
+
+		public int nextUseTime = 0;
+
+		public boolean slammedTarget = false;
+
+		public LevitateTargetAttackGoal(MageEntity mob) {
+			setFlags(EnumSet.of(Goal.Flag.MOVE, Goal.Flag.JUMP, Goal.Flag.LOOK));
+			this.mob = mob;
+			target = mob.getTarget();
+		}
+
+		@Override
+		public boolean isInterruptable() {
+			return mob.shouldBeStationary();
+		}
+
+		public boolean requiresUpdateEveryTick() {
+			return true;
+		}
+
+		@Override
+		public boolean canUse() {
+			target = mob.getTarget();
+
+			return target != null && !mob.shouldBeStationary() && mob.tickCount >= nextUseTime
+					&& mob.distanceTo(target) <= 16 && mob.hasLineOfSight(target)
+					&& animationsUseable();
+		}
+
+		@Override
+		public boolean canContinueToUse() {
+			return target != null && !mob.shouldBeStationary() && !animationsUseable();
+		}
+
+		@Override
+		public void start() {
+			slammedTarget = false;
+			mob.playSound(ModSoundEvents.NECROMANCER_PREPARE_SUMMON.get(), 1.0F, mob.getVoicePitch());
+			mob.attackTimer.reset();
+			mob.level().broadcastEntityEvent(mob, (byte) 4);
+		}
+
+		@Override
+		public void tick() {
+			target = mob.getTarget();
+
+			mob.getNavigation().stop();
+
+			if (target != null) {
+				mob.getLookControl().setLookAt(target.getX(), target.getEyeY(), target.getZ());
+			}
+
+			if (target != null) {
+				target.hurtMarked = true;
+				if (mob.attackTimer.getTick() >= 18) {
+					if (target.getY() < mob.getY() + 7) {
+						target.push(0, 0.1, 0);
+						if (target.verticalCollision && !target.onGround()) {
+							target.hurt(damageSources().flyIntoWall(), 10.0F);
+						}
+					} else {
+						target.setDeltaMovement(target.getDeltaMovement().x * 0.5, 0,
+								target.getDeltaMovement().z * 0.5);
+					}
+				} else {
+					if (!slammedTarget) {
+						target.fallDistance = 0;
+						target.push(0, -0.5, 0);
+						if (target.verticalCollision) {
+							slammedTarget = true;
+							target.hurt(damageSources().flyIntoWall(), 10.0F);
+						}
+					}
+				}
+			}
+		}
+
+		@Override
+		public void stop() {
+			super.stop();
+			slammedTarget = false;
+			nextUseTime = mob.tickCount + 80 + mob.random.nextInt(120);
+		}
+
+		public boolean animationsUseable() {
+			return mob.attackTimer.animationsUseable();
+		}
+
+	}
+
+	class RemainStationaryGoal extends Goal {
+
+		public RemainStationaryGoal() {
+			setFlags(EnumSet.of(Goal.Flag.MOVE, Goal.Flag.LOOK, Goal.Flag.TARGET, Goal.Flag.JUMP));
+		}
+
+		@Override
+		public boolean canUse() {
+			return shouldBeStationary();
+		}
+	}
+
+	@Override
+	public Map<String, AnimationState> getStates() {
+		return states;
+	}
+
+	@Override
+	public WalkAnimationState getWalkAnimation() {
+		return walkAnimation;
+	}
+}

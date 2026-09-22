@@ -1,0 +1,288 @@
+package net.firefoxsalesman.dungeonsmobs.entity.undead;
+
+import java.util.Map;
+import java.util.UUID;
+
+import javax.annotation.Nullable;
+
+import net.firefoxsalesman.dungeonsmobs.ModSoundEvents;
+import net.firefoxsalesman.dungeonsmobs.entity.AnimatableMeleeAttackMob;
+import net.firefoxsalesman.dungeonsmobs.entity.ModEntities;
+import net.firefoxsalesman.dungeonsmobs.entity.SpawnEquipmentHelper;
+import net.firefoxsalesman.dungeonsmobs.goals.ApproachTargetGoal;
+import net.firefoxsalesman.dungeonsmobs.goals.BasicModdedAttackGoal;
+import net.firefoxsalesman.dungeonsmobs.goals.LookAtTargetGoal;
+import net.firefoxsalesman.dungeonsmobs.goals.UseShieldGoal;
+import net.firefoxsalesman.dungeonsmobs.interfaces.IShieldUser;
+import net.firefoxsalesman.dungeonslibs.client.AnimationTimer;
+import net.firefoxsalesman.dungeonslibs.client.KeyframeEntity;
+import net.firefoxsalesman.dungeonslibs.utils.ModHelper;
+import net.firefoxsalesman.dungeonsmobs.mod.ModItems;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.util.Mth;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.DifficultyInstance;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.AnimationState;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.world.entity.SpawnGroupData;
+import net.minecraft.world.entity.WalkAnimationState;
+import net.minecraft.world.entity.ai.attributes.AttributeInstance;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
+import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
+import net.minecraft.world.entity.ai.goal.WaterAvoidingRandomStrollGoal;
+import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
+import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
+import net.minecraft.world.entity.animal.IronGolem;
+import net.minecraft.world.entity.animal.Turtle;
+import net.minecraft.world.entity.animal.Wolf;
+import net.minecraft.world.entity.monster.Skeleton;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.ServerLevelAccessor;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.firefoxsalesman.dungeonsmobs.DungeonsMobs;
+
+public class SkeletonVanguardEntity extends Skeleton implements IShieldUser, AnimatableMeleeAttackMob, KeyframeEntity {
+	private Map<String, AnimationState> states;
+
+	private static final ResourceLocation SPEED_MODIFIER_BLOCKING_ID = ResourceLocation
+			.fromNamespaceAndPath(DungeonsMobs.MOD_ID, "skeleton_vanguard_blocking_speed");
+	private static final AttributeModifier SPEED_MODIFIER_BLOCKING = new AttributeModifier(
+			SPEED_MODIFIER_BLOCKING_ID,
+			-0.05D, AttributeModifier.Operation.ADD_VALUE);
+
+	private int shieldCooldownTime;
+
+	private final AnimationTimer attackTimer = new AnimationTimer(22);
+	private static final int attackAnimationActionPoint = 10;
+
+	public SkeletonVanguardEntity(Level worldIn) {
+		this(ModEntities.SKELETON_VANGUARD.get(), worldIn);
+	}
+
+	public SkeletonVanguardEntity(EntityType<? extends SkeletonVanguardEntity> entityType, Level worldIn) {
+		super(entityType, worldIn);
+		shieldCooldownTime = 0;
+		states = genStates("idle", "attack", "walk", "walkBlock", "block");
+	}
+
+	@Override
+	protected void registerGoals() {
+		goalSelector.addGoal(0, new UseShieldGoal(this, 10D, 60, 120, 10, 60, true));
+		goalSelector.addGoal(1,
+				new BasicModdedAttackGoal<>(this, ModSoundEvents.SKELETON_VANGUARD_ATTACK.get(), 20));
+		goalSelector.addGoal(2, new ApproachTargetGoal(this, 0, 1.0D, true));
+		goalSelector.addGoal(3, new LookAtTargetGoal(this));
+		goalSelector.addGoal(5, new WaterAvoidingRandomStrollGoal(this, 1.0D));
+		goalSelector.addGoal(6, new LookAtPlayerGoal(this, Player.class, 8.0F));
+		goalSelector.addGoal(6, new RandomLookAroundGoal(this));
+		targetSelector.addGoal(0, new HurtByTargetGoal(this));
+		targetSelector.addGoal(1, new NearestAttackableTargetGoal<>(this, Player.class, true));
+		targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, IronGolem.class, true));
+		targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, Wolf.class, true));
+		targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, Turtle.class, 10, true, false,
+				Turtle.BABY_ON_LAND_SELECTOR));
+	}
+
+	@Override
+	protected boolean isSunBurnTick() {
+		return false;
+	}
+
+	public static AttributeSupplier.Builder setCustomAttributes() {
+		return Skeleton.createAttributes().add(Attributes.FOLLOW_RANGE, 26.0D).add(Attributes.ARMOR, 6.0D)
+				.add(Attributes.ATTACK_KNOCKBACK, 1.5D).add(Attributes.KNOCKBACK_RESISTANCE, 0.3D);
+	}
+
+	protected void populateDefaultEquipmentSlots(RandomSource random, DifficultyInstance difficultyInstance) {
+		SpawnEquipmentHelper.equipMainhand(ModHelper.hasMod("dungeonsgear")
+				? new ItemStack(BuiltInRegistries.ITEM
+						.get(ResourceLocation.fromNamespaceAndPath("dungeonsgear", "glaive")))
+				: Items.IRON_SWORD.getDefaultInstance(), this);
+		SpawnEquipmentHelper.equipOffhand(ModItems.VANGUARD_SHIELD.get().getDefaultInstance(), this);
+	}
+
+	@Nullable
+	public SpawnGroupData finalizeSpawn(ServerLevelAccessor world, DifficultyInstance difficultyInstance,
+			MobSpawnType spawnReason, @Nullable SpawnGroupData livingEntityDataIn) {
+		livingEntityDataIn = super.finalizeSpawn(world, difficultyInstance, spawnReason, livingEntityDataIn);
+
+		return livingEntityDataIn;
+	}
+
+	protected SoundEvent getAmbientSound() {
+		return ModSoundEvents.SKELETON_VANGUARD_IDLE.get();
+	}
+
+	protected SoundEvent getHurtSound(DamageSource p_184601_1_) {
+		return ModSoundEvents.SKELETON_VANGUARD_HURT.get();
+	}
+
+	protected SoundEvent getDeathSound() {
+		return ModSoundEvents.SKELETON_VANGUARD_DEATH.get();
+	}
+
+	protected SoundEvent getStepSound() {
+		return ModSoundEvents.SKELETON_VANGUARD_STEP.get();
+	}
+
+	@Override
+	public boolean isLeftHanded() {
+		return true;
+	}
+
+	public void handleEntityEvent(byte event) {
+		if (event == 4) {
+			attackTimer.reset();
+		} else {
+			super.handleEntityEvent(event);
+		}
+	}
+
+	@Override
+	public void tick() {
+		super.tick();
+		if (level().isClientSide) {
+			setupAnimationStates();
+		}
+	}
+
+	private void setupAnimationStates() {
+		getState("attack").animateWhen(attackTimer.isRunning(), tickCount);
+		getState("walkBlock").animateWhen(!attackTimer.isRunning() && isMoving() && isBlocking(), tickCount);
+		getState("block").animateWhen(!attackTimer.isRunning() && !isMoving() && isBlocking(), tickCount);
+		getState("walk").animateWhen(!attackTimer.isRunning() && isMoving() && !isBlocking(), tickCount);
+		getState("idle").animateWhen(!attackTimer.isRunning() && !isMoving() && !isBlocking(), tickCount);
+	}
+
+	public void baseTick() {
+		super.baseTick();
+		AttributeInstance modifiableattributeinstance = getAttribute(Attributes.MOVEMENT_SPEED);
+
+		if (isBlocking()) {
+			if (!modifiableattributeinstance.hasModifier(SPEED_MODIFIER_BLOCKING_ID)) {
+				modifiableattributeinstance.addTransientModifier(SPEED_MODIFIER_BLOCKING);
+			}
+		} else {
+			modifiableattributeinstance.removeModifier(SPEED_MODIFIER_BLOCKING_ID);
+		}
+
+		attackTimer.dec();
+	}
+
+	@Override
+	public int getAttackAnimationActionPoint() {
+		return attackAnimationActionPoint;
+	}
+
+	// SHIELD STUFF
+
+	@Override
+	public void aiStep() {
+		super.aiStep();
+		if (shieldCooldownTime > 0) {
+			shieldCooldownTime--;
+		} else if (shieldCooldownTime < 0) {
+			shieldCooldownTime = 0;
+		}
+	}
+
+	@Override
+	protected void playHurtSound(DamageSource damageSource) {
+		if (shieldCooldownTime == 100) {
+			playSound(SoundEvents.SHIELD_BREAK, 1.0F, 0.8F + level().random.nextFloat() * 0.4F);
+		} else if (isBlocking()) {
+			playSound(SoundEvents.SHIELD_BLOCK, 1.0F, 0.8F + level().random.nextFloat() * 0.4F);
+		} else {
+			super.playHurtSound(damageSource);
+		}
+	}
+
+	@Override
+	public void blockUsingShield(LivingEntity livingEntity) {
+		super.blockUsingShield(livingEntity);
+		if (livingEntity.getMainHandItem().canDisableShield(useItem, this, livingEntity)) {
+			disableShield(true);
+		}
+	}
+
+	@Override
+	protected void hurtCurrentlyUsedShield(float amount) {
+		if (useItem.canPerformAction(net.neoforged.neoforge.common.ItemAbilities.SHIELD_BLOCK)) {
+			if (amount >= 3.0F) {
+				int i = 1 + Mth.floor(amount);
+				InteractionHand hand = getUsedItemHand();
+				useItem.hurtAndBreak(i, this, hand == InteractionHand.MAIN_HAND ? EquipmentSlot.MAINHAND : EquipmentSlot.OFFHAND);
+				if (useItem.isEmpty()) {
+					if (hand == InteractionHand.MAIN_HAND) {
+						setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
+					} else {
+						setItemSlot(EquipmentSlot.OFFHAND, ItemStack.EMPTY);
+					}
+
+					useItem = ItemStack.EMPTY;
+					playSound(SoundEvents.SHIELD_BREAK, 1.0F,
+							0.8F + level().random.nextFloat() * 0.4F);
+				}
+			}
+		}
+	}
+
+	@Override
+	public int getShieldCooldownTime() {
+		return shieldCooldownTime;
+	}
+
+	@Override
+	public void setShieldCooldownTime(int shieldCooldownTime) {
+		this.shieldCooldownTime = shieldCooldownTime;
+	}
+
+	@Override
+	public void disableShield(boolean guaranteeDisable) {
+		float f = 0.25F;
+		if (guaranteeDisable) {
+			f += 0.75F;
+		}
+		if (random.nextFloat() < f) {
+			playSound(SoundEvents.SHIELD_BREAK, 0.8F, 0.8F + level().random.nextFloat() * 0.4F);
+			shieldCooldownTime = 100;
+			stopUsingItem();
+			level().broadcastEntityEvent(this, (byte) 30);
+		}
+	}
+
+	@Override
+	public boolean isShieldDisabled() {
+		return shieldCooldownTime > 0;
+	}
+
+	@Override
+	public Map<String, AnimationState> getStates() {
+		return states;
+	}
+
+	@Override
+	public WalkAnimationState getWalkAnimation() {
+		return walkAnimation;
+	}
+
+	@Override
+	public AnimationTimer getTimer() {
+		return attackTimer;
+	}
+}

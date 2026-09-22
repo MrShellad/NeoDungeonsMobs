@@ -1,0 +1,10 @@
+{
+  "type": "dungeonsmobs:add_spawns",
+  "structures": "#dungeonsmobs:desert_temples",
+  "spawners": {
+    "type": "dungeonsmobs:skeleton_vanguard",
+    "weight": 1,
+    "minCount": 1,
+    "maxCount": 5
+  }
+}
