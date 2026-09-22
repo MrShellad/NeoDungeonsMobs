@@ -21,17 +21,18 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Repository
+      - name: Checkout NeoDungeonsMobs
         uses: actions/checkout@v4
         with:
+          path: NeoDungeonsMobs
           fetch-depth: 0
 
       - name: Checkout NeoDungeonsLibs
         uses: actions/checkout@v4
+        continue-on-error: true
         with:
           repository: ${{ github.repository_owner }}/NeoDungeonsLibs
-          path: ../NeoDungeonsLibs
-          continue-on-error: true
+          path: NeoDungeonsLibs
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4
@@ -44,12 +45,15 @@ jobs:
 
       - name: Make gradlew executable
         run: chmod +x ./gradlew
+        working-directory: NeoDungeonsMobs
 
       - name: Build with Gradle
         run: ./gradlew build --no-daemon
+        working-directory: NeoDungeonsMobs
 
       - name: Extract Version Info
         id: version_info
+        working-directory: NeoDungeonsMobs
         run: |
           MOD_VERSION=$(grep "^mod_version=" gradle.properties | cut -d'=' -f2 | tr -d '\r')
           MC_VERSION=$(grep "^minecraft_version=" gradle.properties | cut -d'=' -f2 | tr -d '\r')
@@ -71,7 +75,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: NeoDungeonsMobs-artifacts
-          path: build/libs/*.jar
+          path: NeoDungeonsMobs/build/libs/*.jar
 
       - name: Publish GitHub Release
         if: github.event_name != 'pull_request'
@@ -79,7 +83,7 @@ jobs:
         with:
           tag_name: ${{ steps.version_info.outputs.tag_name }}
           name: ${{ steps.version_info.outputs.release_title }}
-          files: build/libs/*.jar
+          files: NeoDungeonsMobs/build/libs/*.jar
           draft: false
           prerelease: false
           generate_release_notes: true
